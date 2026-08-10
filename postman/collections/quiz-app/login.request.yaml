@@ -1,0 +1,10 @@
+$kind: http-request
+name: login
+url: "{{baseUrl}}api/auth/login"
+method: POST
+body:
+  type: json
+  content: '{"email":"login@test.com","password":"pass123"}'
+auth:
+  type: noauth
+order: 1627257887180930

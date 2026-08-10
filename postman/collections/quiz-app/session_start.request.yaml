@@ -1,0 +1,12 @@
+$kind: http-request
+name: session_start
+url: http://localhost:8080/api/sessions/4/start
+method: POST
+body:
+  type: json
+  content: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0toh}}"
+order: 4503308512167919

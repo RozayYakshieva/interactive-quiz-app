@@ -1,0 +1,12 @@
+$kind: http-request
+name: session_join
+url: http://localhost:8080/api/sessions/join
+method: POST
+body:
+  type: json
+  content: '{"roomCode" : "1147014C"}'
+auth:
+  type: bearer
+  credentials:
+    token: "{{supabase_service_role_api_key_17sl}}"
+order: 4503201684981295

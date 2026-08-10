@@ -1,0 +1,12 @@
+$kind: http-request
+name: quizzes
+url: http://localhost:8080/api/quizzes/9
+method: DELETE
+body:
+  type: json
+  content: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{supabase_service_role_api_key_0w1l}}"
+order: 4430929757756729

@@ -1,0 +1,27 @@
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+
+# ===== Java / Gradle =====
+backend/build/
+backend/.gradle/
+backend/out/
+*.class
+*.jar
+*.war
+backend/server.log
+
+# ===== Node / Frontend =====
+frontend/node_modules/
+frontend/dist/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+
+# ===== Misc =====
+backend/package-lock.json

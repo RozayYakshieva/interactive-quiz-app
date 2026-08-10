@@ -1,0 +1,12 @@
+$kind: http-request
+name: current_question
+url: http://localhost:8080/api/sessions/1/current-question
+method: GET
+body:
+  type: json
+  content: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_17sl}}"
+order: 4503317307341439

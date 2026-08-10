@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket STOMP Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        #log {
+            background: #1e1e1e; color: #00ff00; padding: 15px;
+            border-radius: 5px; min-height: 200px; font-family: monospace;
+            white-space: pre-wrap; margin-top: 20px;
+        }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        .error { color: #ff4444; }
+        .info { color: #aaaaaa; }
+    </style>
+    <!-- Подключаем библиотеку stomp.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h2>🧪 Тест WebSocket (STOMP)</h2>
+<p>1. Убедись, что сервер запущен.</p>
+<p>2. Нажми "Подключиться", чтобы подписаться на сессию ID=4.</p>
+<p>3. В Postman отправь PUT /api/sessions/4/start</p>
+
+<button onclick="connect()">🔌 Подключиться и подписаться</button>
+
+<div id="log">Ожидание действий...</div>
+
+<script>
+    function connect() {
+        const logDiv = document.getElementById('log');
+        logDiv.innerHTML = ''; // Очистка лога
+
+        // 1. Создаем обычное WebSocket соединение
+        const socket = new WebSocket('ws://localhost:8080/ws');
+        const client = Stomp.over(socket);
+
+        // Отключаем heartbeat, чтобы не спамить в консоль
+        client.heartbeat.outgoing = 0;
+        client.heartbeat.incoming = 0;
+
+        log('Попытка подключения...', 'info');
+
+        // 2. Подключаемся по протоколу STOMP
+        client.connect({}, function(frame) {
+            log('✅ Успешно подключено к STOMP!', 'success');
+
+            // 3. Подписываемся на топик конкретной сессии
+            // ЗАМЕНИ '4' НА РЕАЛЬНЫЙ ID СЕССИИ ИЗ БАЗЫ
+            const sessionId = 9;
+            const destination = '/topic/session/' + sessionId;
+
+            client.subscribe(destination, function(message) {
+                // Когда приходит сообщение от сервера
+                const body = JSON.parse(message.body);
+                log('📩 ПОЛУЧЕНО: ' + JSON.stringify(body, null, 2));
+            });
+
+            log('📡 Подписка оформлена на: ' + destination, 'info');
+        }, function(error) {
+            log('❌ Ошибка подключения: ' + error, 'error');
+        });
+    }
+
+    function log(msg, type = '') {
+        const logDiv = document.getElementById('log');
+        const time = new Date().toLocaleTimeString();
+        const cssClass = type === 'error' ? 'error' : (type === 'info' ? 'info' : '');
+        logDiv.innerHTML += `<div class="${cssClass}">[${time}] ${msg}</div>`;
+    }
+</script>
+</body>
+</html>

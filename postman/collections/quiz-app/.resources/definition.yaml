@@ -1,0 +1,27 @@
+$kind: collection
+name: quiz-app
+variables:
+  - key: baseUrl
+    value: ""
+    disabled: false
+  - key: supabase_service_role_api_key_07je
+    secret: true
+    disabled: false
+  - key: json_web_token_11gv
+    secret: true
+    disabled: false
+  - key: supabase_service_role_api_key_0w1l
+    secret: true
+    disabled: false
+  - key: supabase_service_role_api_key_17sl
+    secret: true
+    disabled: false
+  - key: json_web_token_17sl
+    secret: true
+    disabled: false
+  - key: supabase_service_role_api_key_0r9p
+    secret: true
+    disabled: false
+  - key: json_web_token_0toh
+    secret: true
+    disabled: false

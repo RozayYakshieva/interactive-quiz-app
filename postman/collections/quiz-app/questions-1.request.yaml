@@ -1,0 +1,28 @@
+$kind: http-request
+name: questions
+url: http://localhost:8080/api/quizzes/10/questions
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \    \"text\": \"Столица Франции?\",\r
+
+    \    \"type\": \"SINGLE\",\r
+
+    \    \"options\": [\r
+
+    \        {\"id\": 1, \"text\": \"Париж\", \"isCorrect\": true},\r
+
+    \        {\"id\": 2, \"text\": \"Лондон\", \"isCorrect\": false},\r
+
+    \        {\"text\": \"Берлин\", \"isCorrect\": false}\r
+
+    \    ]\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{supabase_service_role_api_key_0w1l}}"
+order: 4497735321314260
