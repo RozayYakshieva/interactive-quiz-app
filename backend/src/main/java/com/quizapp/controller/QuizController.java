@@ -4,7 +4,6 @@ import com.quizapp.dto.CreateQuizRequest;
 import com.quizapp.dto.GameSessionResponse;
 import com.quizapp.dto.QuizResponse;
 import com.quizapp.dto.UpdateQuizRequest;
-import com.quizapp.entity.User;
 import com.quizapp.security.AuthUtils;
 import com.quizapp.service.QuizService;
 import jakarta.validation.Valid;
@@ -24,7 +23,6 @@ public class QuizController {
 
   @GetMapping
   public ResponseEntity<List<QuizResponse>> listQuizzes(Authentication authentication) {
-
     return ResponseEntity.ok(
         quizService.getQuizzesByOrganizer(AuthUtils.getCurrentUser(authentication).getId()));
   }
@@ -32,14 +30,13 @@ public class QuizController {
   @GetMapping("/{id}")
   public ResponseEntity<QuizResponse> getQuizById(
       @PathVariable Long id, Authentication authentication) {
-    User organizer = AuthUtils.getCurrentUser(authentication);
-    return ResponseEntity.ok((quizService.getQuizWithQuestions(id, organizer)));
+    return ResponseEntity.ok(
+        quizService.getQuizWithQuestions(id, AuthUtils.getCurrentUser(authentication)));
   }
 
   @PostMapping
   public ResponseEntity<QuizResponse> createQuiz(
       @Valid @RequestBody CreateQuizRequest request, Authentication authentication) {
-
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(quizService.createQuiz(request, AuthUtils.getCurrentUser(authentication)));
   }
@@ -49,16 +46,13 @@ public class QuizController {
       @PathVariable Long id,
       @Valid @RequestBody UpdateQuizRequest request,
       Authentication authentication) {
-
     return ResponseEntity.ok(
         quizService.updateQuiz(id, request, AuthUtils.getCurrentUser(authentication)));
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteQuiz(@PathVariable Long id, Authentication authentication) {
-
     quizService.deleteQuiz(id, AuthUtils.getCurrentUser(authentication));
-
     return ResponseEntity.noContent().build();
   }
 

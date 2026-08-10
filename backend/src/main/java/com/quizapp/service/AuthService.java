@@ -39,16 +39,7 @@ public class AuthService {
             .build();
 
     userRepository.save(user);
-
-    String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole().name());
-
-    return AuthResponse.builder()
-        .id(user.getId())
-        .email(user.getEmail())
-        .username(user.getUsername())
-        .role(user.getRole().name())
-        .token(token)
-        .build();
+    return toAuthResponse(user);
   }
 
   public AuthResponse login(LoginRequest request) {
@@ -61,15 +52,7 @@ public class AuthService {
       throw new IllegalArgumentException("Invalid password");
     }
 
-    String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole().name());
-
-    return AuthResponse.builder()
-        .id(user.getId())
-        .email(user.getEmail())
-        .username(user.getUsername())
-        .role(user.getRole().name())
-        .token(token)
-        .build();
+    return toAuthResponse(user);
   }
 
   public UserProfileResponse getProfile(User user) {
@@ -114,5 +97,17 @@ public class AuthService {
 
     user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
     userRepository.save(user);
+  }
+
+  private AuthResponse toAuthResponse(User user) {
+    String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+
+    return AuthResponse.builder()
+        .id(user.getId())
+        .email(user.getEmail())
+        .username(user.getUsername())
+        .role(user.getRole().name())
+        .token(token)
+        .build();
   }
 }

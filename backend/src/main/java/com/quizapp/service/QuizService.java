@@ -1,16 +1,19 @@
 package com.quizapp.service;
 
-import com.quizapp.dto.*;
+import com.quizapp.dto.AnswerOptionRequest;
+import com.quizapp.dto.CreateQuestionRequest;
+import com.quizapp.dto.CreateQuizRequest;
+import com.quizapp.dto.CreateSessionRequest;
+import com.quizapp.dto.GameSessionResponse;
+import com.quizapp.dto.QuizResponse;
+import com.quizapp.dto.SessionResponse;
+import com.quizapp.dto.UpdateQuizRequest;
 import com.quizapp.entity.AnswerOption;
-import com.quizapp.entity.GameSession;
 import com.quizapp.entity.Question;
 import com.quizapp.entity.Quiz;
 import com.quizapp.entity.User;
 import com.quizapp.enums.QuizStatus;
-import com.quizapp.enums.SessionStatus;
 import com.quizapp.exception.ResourceNotFoundException;
-import com.quizapp.repository.GameSessionRepository;
-import com.quizapp.repository.QuestionsRepository;
 import com.quizapp.repository.QuizRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class QuizService {
 
   private final QuizRepository quizRepository;
-  private final GameSessionRepository sessionRepository;
-  private final QuestionsRepository questionsRepository;
   private final SessionService sessionService;
 
   @Transactional
   public QuizResponse createQuiz(CreateQuizRequest request, User organizer) {
-
     Quiz quiz = new Quiz();
     quiz.setTitle(request.getTitle());
     quiz.setDescription(request.getDescription());
@@ -36,21 +36,18 @@ public class QuizService {
     quiz.setStatus(QuizStatus.DRAFT);
     quiz.setOrganizer(organizer);
 
-    for (CreateQuestionRequest q : request.getQuestions()) {
-
+    for (CreateQuestionRequest questionRequest : request.getQuestions()) {
       Question question = new Question();
-      question.setText(q.getText());
-      question.setType(q.getType());
-      question.setImageUrl(q.getImageUrl());
+      question.setText(questionRequest.getText());
+      question.setType(questionRequest.getType());
+      question.setImageUrl(questionRequest.getImageUrl());
       question.setQuiz(quiz);
 
-      for (AnswerOptionRequest o : q.getOptions()) {
-
+      for (AnswerOptionRequest optionRequest : questionRequest.getOptions()) {
         AnswerOption option = new AnswerOption();
-        option.setText(o.getText());
-        option.setIsCorrect(o.getIsCorrect());
+        option.setText(optionRequest.getText());
+        option.setIsCorrect(optionRequest.getIsCorrect());
         option.setQuestion(question);
-
         question.getAnswerOptions().add(option);
       }
 
@@ -58,7 +55,6 @@ public class QuizService {
     }
 
     quizRepository.save(quiz);
-
     return toResponse(quiz);
   }
 
@@ -75,36 +71,27 @@ public class QuizService {
         .build();
   }
 
+  @Transactional(readOnly = true)
   public List<QuizResponse> getQuizzesByOrganizer(Long organizerId) {
     return quizRepository.findByOrganizerId(organizerId).stream().map(this::toResponse).toList();
   }
 
   @Transactional
   public QuizResponse updateQuiz(Long quizId, UpdateQuizRequest request, User organizer) {
-    Quiz quiz =
-        quizRepository
-            .findById(quizId)
-            .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with id: " + quizId));
-    if (!quiz.getOrganizer().getId().equals(organizer.getId())) {
-      throw new IllegalArgumentException("You can only update your own quizzes");
-    }
+    Quiz quiz = findQuizById(quizId);
+    requireOwner(quiz, organizer, "You can only update your own quizzes");
+
     quiz.setTitle(request.getTitle());
     quiz.setDescription(request.getDescription());
     quiz.setTimePerQuestion(request.getTimePerQuestion());
-
     quizRepository.save(quiz);
     return toResponse(quiz);
   }
 
   @Transactional
   public void deleteQuiz(Long quizId, User organizer) {
-    Quiz quiz =
-        quizRepository
-            .findById(quizId)
-            .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with id: " + quizId));
-    if (!quiz.getOrganizer().getId().equals(organizer.getId())) {
-      throw new IllegalArgumentException("You can only delete your own quizzes");
-    }
+    Quiz quiz = findQuizById(quizId);
+    requireOwner(quiz, organizer, "You can only delete your own quizzes");
     quizRepository.delete(quiz);
   }
 
@@ -114,37 +101,28 @@ public class QuizService {
         quizRepository
             .findById(quizId)
             .orElseThrow(() -> new ResourceNotFoundException("Quiz not found"));
-    if (!quiz.getOrganizer().getId().equals(currentUser.getId())) {
-      throw new IllegalArgumentException("Access denied");
-    }
+
+    requireOwner(quiz, currentUser, "Access denied");
     return toResponse(quiz);
   }
 
   @Transactional
   public GameSessionResponse startSession(Long quizId, User organizer) {
-    Quiz quiz =
-        quizRepository
-            .findById(quizId)
-            .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with id: " + quizId));
+    CreateSessionRequest request = new CreateSessionRequest();
+    request.setQuizId(quizId);
+    SessionResponse created = sessionService.createSession(request, organizer);
+    return sessionService.getSessionByCode(created.getCode());
+  }
 
-    if (!quiz.getOrganizer().getId().equals(organizer.getId())) {
-      throw new IllegalArgumentException("You can only start sessions for your own quizzes");
+  private Quiz findQuizById(Long quizId) {
+    return quizRepository
+        .findById(quizId)
+        .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with id: " + quizId));
+  }
+
+  private void requireOwner(Quiz quiz, User user, String message) {
+    if (!quiz.getOrganizer().getId().equals(user.getId())) {
+      throw new IllegalArgumentException(message);
     }
-
-    long questionCount = questionsRepository.countByQuizId(quizId);
-    if (questionCount == 0) {
-      throw new IllegalArgumentException("Quiz is not ready to start: add at least one question");
-    }
-
-    GameSession session =
-        GameSession.builder()
-            .quiz(quiz)
-            .code(sessionService.generateUniqueCode())
-            .status(SessionStatus.WAITING)
-            .currentQuestionIndex(0)
-            .build();
-
-    sessionRepository.save(session);
-    return sessionService.toGameSessionResponse(session);
   }
 }
