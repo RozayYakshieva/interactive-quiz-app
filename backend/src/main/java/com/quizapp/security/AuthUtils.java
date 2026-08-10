@@ -2,8 +2,6 @@ package com.quizapp.security;
 
 import com.quizapp.entity.User;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 
 public final class AuthUtils {
 
@@ -16,13 +14,10 @@ public final class AuthUtils {
     return ((AppUserDetails) authentication.getPrincipal()).getUser();
   }
 
-  public static String getCurrentUserEmail() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-    if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
-      throw new IllegalStateException("User not authenticated");
+  public static User getOptionalUser(Authentication authentication) {
+    if (authentication != null && authentication.getPrincipal() instanceof AppUserDetails) {
+      return ((AppUserDetails) authentication.getPrincipal()).getUser();
     }
-
-    return ((UserDetails) authentication.getPrincipal()).getUsername();
+    return null;
   }
 }

@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class WebSocketService {
 
+  private static final int DEFAULT_QUESTION_DURATION = 20;
+  private static final String TOPIC_PREFIX = "/topic/session/";
+
   private final SimpMessagingTemplate messagingTemplate;
 
   public void sendQuestion(Long sessionId, Question question) {
@@ -29,6 +32,7 @@ public class WebSocketService {
                         .isCorrect(opt.getIsCorrect())
                         .build())
             .toList();
+
     WsQuestion wsQuestion =
         WsQuestion.builder()
             .questionId(question.getId())
@@ -36,7 +40,7 @@ public class WebSocketService {
             .imageUrl(question.getImageUrl())
             .type(question.getType())
             .options(options)
-            .duration(20)
+            .duration(DEFAULT_QUESTION_DURATION)
             .build();
 
     send(sessionId, "QUESTION", wsQuestion);
@@ -51,6 +55,7 @@ public class WebSocketService {
             .score(score)
             .totalAnswered(totalAnswered)
             .build();
+
     send(sessionId, "RESULT", result);
   }
 
@@ -59,16 +64,18 @@ public class WebSocketService {
     send(sessionId, "EVENT", gameEvent);
   }
 
-  private void send(Long sessionId, String type, Object payload) {
-    WsMessage wsMessage = new WsMessage(type, payload);
-    messagingTemplate.convertAndSend("/topic/session/" + sessionId, wsMessage);
-  }
-
   public void startQuestion(Long sessionId, Long questionId) {
-
     QuestionStartedEvent event =
-        QuestionStartedEvent.builder().questionId(questionId).duration(20).build();
+        QuestionStartedEvent.builder()
+            .questionId(questionId)
+            .duration(DEFAULT_QUESTION_DURATION)
+            .build();
 
     send(sessionId, "QUESTION_STARTED", event);
+  }
+
+  private void send(Long sessionId, String type, Object payload) {
+    WsMessage wsMessage = new WsMessage(type, payload);
+    messagingTemplate.convertAndSend(TOPIC_PREFIX + sessionId, wsMessage);
   }
 }

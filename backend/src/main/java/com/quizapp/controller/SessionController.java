@@ -1,8 +1,6 @@
 package com.quizapp.controller;
 
 import com.quizapp.dto.*;
-import com.quizapp.entity.User;
-import com.quizapp.security.AppUserDetails;
 import com.quizapp.security.AuthUtils;
 import com.quizapp.service.SessionService;
 import jakarta.validation.Valid;
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/sessions")
 @RequiredArgsConstructor
 public class SessionController {
+
   private final SessionService sessionService;
 
   @PostMapping
@@ -29,12 +28,8 @@ public class SessionController {
   @PostMapping("/join")
   public ResponseEntity<ParticipantResponse> joinSession(
       @Valid @RequestBody JoinSessionRequest request, Authentication authentication) {
-    User user = null;
-    if (authentication != null && authentication.getPrincipal() instanceof AppUserDetails) {
-      user = AuthUtils.getCurrentUser(authentication);
-    }
-
-    return ResponseEntity.ok(sessionService.joinSession(request, user));
+    return ResponseEntity.ok(
+        sessionService.joinSession(request, AuthUtils.getOptionalUser(authentication)));
   }
 
   @PostMapping("/{id}/start")
@@ -56,17 +51,18 @@ public class SessionController {
     return ResponseEntity.ok(sessionService.getCurrentQuestion(id));
   }
 
+  @GetMapping("/{id}/current")
+  public ResponseEntity<QuestionResponse> getCurrent(@PathVariable Long id) {
+    return ResponseEntity.ok(sessionService.getCurrentQuestion(id));
+  }
+
   @PostMapping("/{id}/answer")
   public ResponseEntity<AnswerResponse> submitAnswer(
       @PathVariable Long id,
       @Valid @RequestBody SubmitAnswerRequest request,
       Authentication authentication) {
-    User user = null;
-    if (authentication != null && authentication.getPrincipal() instanceof AppUserDetails) {
-      user = AuthUtils.getCurrentUser(authentication);
-    }
-
-    return ResponseEntity.ok(sessionService.submitAnswer(id, request, user));
+    return ResponseEntity.ok(
+        sessionService.submitAnswer(id, request, AuthUtils.getOptionalUser(authentication)));
   }
 
   @PostMapping("/{id}/next-question")
@@ -108,11 +104,5 @@ public class SessionController {
       @PathVariable String code, Authentication authentication) {
     sessionService.cancelSessionByCode(code, AuthUtils.getCurrentUser(authentication));
     return ResponseEntity.noContent().build();
-  }
-
-  @GetMapping("/{id}/current")
-  public ResponseEntity<QuestionResponse> getCurrent(@PathVariable Long id) {
-
-    return ResponseEntity.ok(sessionService.getCurrentQuestion(id));
   }
 }

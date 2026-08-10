@@ -9,8 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserAnswerRepository extends JpaRepository<UserAnswer, Long> {
 
-  long countByParticipant_Session_IdAndQuestion_Id(Long sessionId, Long questionId);
-
   boolean existsByParticipant_IdAndQuestion_Id(Long participantId, Long questionId);
 
   @Query(

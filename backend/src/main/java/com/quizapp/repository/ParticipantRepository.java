@@ -17,4 +17,6 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
   List<Participant> findBySessionIdOrderByScoreDesc(Long sessionId);
 
   List<Participant> findBySessionId(Long sessionId);
+
+  long countBySessionId(Long sessionId);
 }
