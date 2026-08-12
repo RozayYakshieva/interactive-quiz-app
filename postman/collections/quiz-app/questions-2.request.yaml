@@ -1,9 +1,0 @@
-$kind: http-request
-name: questions
-url: http://localhost:8080/api/quizzes/10/questions/11
-method: DELETE
-auth:
-  type: bearer
-  credentials:
-    token: "{{supabase_service_role_api_key_0w1l}}"
-order: 4500506899932673

@@ -1,9 +1,0 @@
-$kind: http-request
-name: leaderboard
-url: http://localhost:8080/api/sessions/3/leaderboard
-method: GET
-auth:
-  type: bearer
-  credentials:
-    token: "{{supabase_service_role_api_key_0r9p}}"
-order: 4503598664613430
