@@ -1,0 +1,13 @@
+# Local overrides for Spring Boot (optional).
+# Copy to application-local.yml and fill in real values.
+# This file is gitignored — never commit secrets.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/quiz_app
+    username: postgres
+    password: change-me
+
+jwt:
+  secret: change-me-to-a-long-random-secret-at-least-32-chars
+  expiration: 86400000
