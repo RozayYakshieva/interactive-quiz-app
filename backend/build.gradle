@@ -55,3 +55,32 @@ spotless {
         formatAnnotations()
     }
 }
+
+// ✅ Обновленный блок чтения .env
+tasks.withType(JavaExec).configureEach {
+    def envFile = file("${projectDir}/../.env")
+    if (envFile.exists()) {
+        println "✅ Loading .env from: ${envFile.absolutePath}"
+        envFile.eachLine { line ->
+            // Пропускаем комментарии и пустые строки
+            if (line.trim() && !line.startsWith('#')) {
+                def parts = line.split('=', 2)
+                if (parts.length == 2) {
+                    def key = parts[0].trim()
+                    def value = parts[1].trim()
+
+                    // Убираем кавычки, если они есть
+                    if (value.startsWith('"') && value.endsWith('"')) {
+                        value = value.substring(1, value.length() - 1)
+                    }
+
+                    environment(key, value)
+                    println "   ↳ Set $key = ${value.take(3)}..." // Показываем первые 3 символа для проверки
+                }
+            }
+        }
+    } else {
+        println "❌ .env file NOT found at: ${envFile.absolutePath}"
+    }
+}
+

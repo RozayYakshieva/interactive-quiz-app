@@ -11,10 +11,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
-  @Value("${jwt.secret:defaultSecretKeyForDevelopmentOnly1234567890123456}")
+  @Value("${jwt.secret}")
   private String secret;
 
-  @Value("${jwt.expiration:86400000}")
+  @Value("${jwt.expiration}")
   private long expiration;
 
   private SecretKey getSigningKey() {
