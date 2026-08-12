@@ -1,7 +1,0 @@
-$kind: http-request
-name: quizzes
-url: http://localhost:8080/api/quizzes
-method: POST
-auth:
-  type: bearer
-order: 4172603670536684
