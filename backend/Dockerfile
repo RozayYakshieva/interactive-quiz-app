@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY . .
 
+ARG CACHEBUST=1
+
 RUN gradle clean bootJar --no-daemon
 
 
