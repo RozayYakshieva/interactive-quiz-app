@@ -173,7 +173,7 @@ public class SessionService {
       webSocketService.startQuestion(session.getId(), firstQuestion.getId());
     }
 
-    webSocketService.sendEvent(session.getId(), "GAME_STARTED", "Игра началась!");
+    webSocketService.sendEvent(session.getId(), "GAME_STARTED", "Game started!");
     return toResponse(session);
   }
 

@@ -6,10 +6,10 @@ import lombok.Data;
 
 @Data
 public class UpdateQuizRequest {
-  @NotBlank(message = "Название квиза не может быть пустым")
+  @NotBlank(message = "Quiz title is required")
   private String title;
 
   private String description;
 
-  @Positive(message = "Время должно быть больше 0") private Integer timePerQuestion;
+  @Positive(message = "Time must be greater than 0") private Integer timePerQuestion;
 }

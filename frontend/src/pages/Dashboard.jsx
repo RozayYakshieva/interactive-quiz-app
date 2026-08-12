@@ -76,7 +76,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <p className="text-gray-500 text-lg animate-pulse">
-          Загрузка дашборда...
+          Loading dashboard...
         </p>
       </div>
     );

@@ -7,7 +7,7 @@ import lombok.Data;
 public class AnswerOptionRequest {
   private Long id;
 
-  @NotBlank(message = "Текст варианта ответа не может быть пустым")
+  @NotBlank(message = "Answer option text is required")
   private String text;
 
   private Boolean isCorrect;

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>WebSocket STOMP Test</title>
@@ -15,52 +15,52 @@
         .error { color: #ff4444; }
         .info { color: #aaaaaa; }
     </style>
-    <!-- Подключаем библиотеку stomp.js -->
+    <!-- Load the stomp.js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
-<h2>🧪 Тест WebSocket (STOMP)</h2>
-<p>1. Убедись, что сервер запущен.</p>
-<p>2. Нажми "Подключиться", чтобы подписаться на сессию ID=4.</p>
-<p>3. В Postman отправь PUT /api/sessions/4/start</p>
+<h2>🧪 WebSocket (STOMP) Test</h2>
+<p>1. Make sure the server is running.</p>
+<p>2. Click "Connect" to subscribe to session ID=4.</p>
+<p>3. In Postman, send PUT /api/sessions/4/start</p>
 
-<button onclick="connect()">🔌 Подключиться и подписаться</button>
+<button onclick="connect()">🔌 Connect and subscribe</button>
 
-<div id="log">Ожидание действий...</div>
+<div id="log">Waiting for actions...</div>
 
 <script>
     function connect() {
         const logDiv = document.getElementById('log');
-        logDiv.innerHTML = ''; // Очистка лога
+        logDiv.innerHTML = ''; // Clear the log
 
-        // 1. Создаем обычное WebSocket соединение
+        // 1. Create a plain WebSocket connection
         const socket = new WebSocket('ws://localhost:8080/ws');
         const client = Stomp.over(socket);
 
-        // Отключаем heartbeat, чтобы не спамить в консоль
+        // Disable heartbeat to avoid console spam
         client.heartbeat.outgoing = 0;
         client.heartbeat.incoming = 0;
 
-        log('Попытка подключения...', 'info');
+        log('Connecting...', 'info');
 
-        // 2. Подключаемся по протоколу STOMP
+        // 2. Connect via STOMP
         client.connect({}, function(frame) {
-            log('✅ Успешно подключено к STOMP!', 'success');
+            log('✅ Successfully connected to STOMP!', 'success');
 
-            // 3. Подписываемся на топик конкретной сессии
-            // ЗАМЕНИ '4' НА РЕАЛЬНЫЙ ID СЕССИИ ИЗ БАЗЫ
+            // 3. Subscribe to a specific session topic
+            // REPLACE '4' WITH A REAL SESSION ID FROM THE DATABASE
             const sessionId = 9;
             const destination = '/topic/session/' + sessionId;
 
             client.subscribe(destination, function(message) {
-                // Когда приходит сообщение от сервера
+                // When a message arrives from the server
                 const body = JSON.parse(message.body);
-                log('📩 ПОЛУЧЕНО: ' + JSON.stringify(body, null, 2));
+                log('📩 RECEIVED: ' + JSON.stringify(body, null, 2));
             });
 
-            log('📡 Подписка оформлена на: ' + destination, 'info');
+            log('📡 Subscribed to: ' + destination, 'info');
         }, function(error) {
-            log('❌ Ошибка подключения: ' + error, 'error');
+            log('❌ Connection error: ' + error, 'error');
         });
     }
 
