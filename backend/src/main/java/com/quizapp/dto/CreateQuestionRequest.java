@@ -10,12 +10,12 @@ import lombok.Data;
 @Data
 public class CreateQuestionRequest {
 
-  @NotBlank(message = "Текст вопроса не должен быть пустым")
+  @NotBlank(message = "Question text is required")
   private String text;
 
-  @NotNull(message = "Тип вопроса обязателен") private QuestionType type;
+  @NotNull(message = "Question type is required") private QuestionType type;
 
-  @NotNull(message = "Варианты ответов обязательны") @Size(min = 2, message = "Должно быть минимум два варианта ответов")
+  @NotNull(message = "Answer options are required") @Size(min = 2, message = "At least two answer options are required")
   private List<AnswerOptionRequest> options;
 
   private String imageUrl;

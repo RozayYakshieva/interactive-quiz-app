@@ -10,13 +10,13 @@ import lombok.Data;
 @Data
 public class CreateQuizRequest {
 
-  @NotBlank(message = "Название квиза не может быть пустым")
+  @NotBlank(message = "Quiz title is required")
   private String title;
 
   private String description;
 
-  @NotNull(message = "Время на вопрос обязательно") @Positive(message = "Время должно быть больше 0") private Integer timePerQuestion;
+  @NotNull(message = "Time per question is required") @Positive(message = "Time must be greater than 0") private Integer timePerQuestion;
 
-  @NotNull(message = "Список вопросов обязателен") @Size(min = 1, message = "Должен быть минимум один вопрос")
+  @NotNull(message = "Questions list is required") @Size(min = 1, message = "At least one question is required")
   private List<CreateQuestionRequest> questions;
 }

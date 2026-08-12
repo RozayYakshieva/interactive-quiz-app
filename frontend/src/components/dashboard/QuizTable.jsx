@@ -24,9 +24,9 @@ export default function QuizTable({ quizzes = [], onDelete }) {
   if (quizzes.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center">
-        <p className="text-gray-500 mb-4">У вас пока нет созданных квизов.</p>
+        <p className="text-gray-500 mb-4">You don't have any quizzes yet.</p>
         <button className="text-blue-600 font-medium hover:underline">
-          Создать первый квиз →
+          Create your first quiz →
         </button>
       </div>
     );

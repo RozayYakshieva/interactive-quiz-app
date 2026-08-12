@@ -314,7 +314,7 @@ export default function Leaderboard() {
           <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
             <User size={18} className="text-blue-600" />
           </div>
-          <span className="font-medium">Выйти</span>
+          <span className="font-medium">Log out</span>
           <LogOut size={16} className="text-slate-400" />
         </button>
       </header>
