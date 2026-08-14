@@ -1,8 +1,20 @@
-import api from "../api/axios";
+import axios from "axios";
+import api, { authHeaders } from "../api/axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
+
+const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export const quizService = {
   async createQuiz(quizData) {
-    const response = await api.post("/quizzes", quizData);
+    const response = await apiClient.post("/api/quizzes", quizData, {
+      headers: authHeaders(),
+    });
     return response.data;
   },
 
