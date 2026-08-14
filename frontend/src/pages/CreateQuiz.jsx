@@ -1,7 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { ArrowLeft, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/dashboard/Sidebar';
+import SortableItem from '../components/quiz/SortableItem';
 import { quizService } from '../services/quizService';
 
 const STEPS = ['Basics', 'Questions', 'Settings', 'Launch'];
@@ -78,7 +93,7 @@ function mapQuestionFromApi(question, defaultTimeLimit = 30) {
   };
 }
 
-function toQuestionPayload(question) {
+function toQuestionPayload(question, orderIndex) {
   const timeLimit = question.unlimitedTime
     ? null
     : Number(question.timeLimit);
@@ -88,6 +103,7 @@ function toQuestionPayload(question) {
     type: normalizeQuestionType(question.type),
     imageUrl: question.imageUrl?.trim() || null,
     timeLimit: Number.isFinite(timeLimit) && timeLimit > 0 ? timeLimit : null,
+    orderIndex,
     options: question.options
       .filter((option) => option.text.trim())
       .map((option) => ({
@@ -146,6 +162,29 @@ export default function CreateQuiz() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  const questionIds = useMemo(() => questions.map((question) => question.id), [questions]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setQuestions((items) => {
+      const oldIndex = items.findIndex((question) => question.id === active.id);
+      const newIndex = items.findIndex((question) => question.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex);
+    });
+  };
+
   useEffect(() => {
     if (!id) return;
 
@@ -167,7 +206,11 @@ export default function CreateQuiz() {
         setDescription(quiz.description ?? '');
         const quizTime = quiz.timePerQuestion ?? 30;
         setTimePerQuestion(quizTime);
-        setQuestions(quizQuestions.map((question) => mapQuestionFromApi(question, quizTime)));
+        setQuestions(
+          [...quizQuestions]
+            .sort((a, b) => (a.orderIndex ?? a.id ?? 0) - (b.orderIndex ?? b.id ?? 0))
+            .map((question) => mapQuestionFromApi(question, quizTime))
+        );
         setDeletedQuestionIds([]);
       } catch (err) {
         if (cancelled) return;
@@ -344,8 +387,9 @@ export default function CreateQuiz() {
           await quizService.deleteQuestion(id, questionId);
         }
 
-        for (const question of questions) {
-          const payload = toQuestionPayload(question);
+        for (let index = 0; index < questions.length; index += 1) {
+          const question = questions[index];
+          const payload = toQuestionPayload(question, index);
 
           if (question.serverId) {
             await quizService.updateQuestion(id, Number(question.serverId), payload);
@@ -358,7 +402,7 @@ export default function CreateQuiz() {
           title,
           description,
           timePerQuestion,
-          questions: questions.map(toQuestionPayload),
+          questions: questions.map((question, index) => toQuestionPayload(question, index)),
         });
       }
 
@@ -508,181 +552,188 @@ export default function CreateQuiz() {
               )}
 
               <div className="space-y-4">
-                {questions.map((question, qIndex) => (
-                  <div
-                    key={question.id}
-                    className="bg-white rounded-xl border border-gray-200 p-5 space-y-4 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <label className="text-sm font-semibold text-gray-700 pt-1">
-                        Question {qIndex + 1}
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => removeQuestion(question.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-
-                    <input
-                      type="text"
-                      value={question.text}
-                      onChange={(e) =>
-                        updateQuestionText(question.id, e.target.value)
-                      }
-                      placeholder="Enter question text..."
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all placeholder:text-gray-400"
-                    />
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Question Type
-                      </label>
-                      <div className="flex gap-6 mt-2">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`type-${question.id}`}
-                            checked={question.type === 'SINGLE'}
-                            onChange={() => updateQuestionType(question.id, 'SINGLE')}
-                            className="accent-[#0058BE]"
-                          />
-                          <span className="text-sm">Single Choice</span>
-                        </label>
-
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`type-${question.id}`}
-                            checked={question.type === 'MULTIPLE'}
-                            onChange={() => updateQuestionType(question.id, 'MULTIPLE')}
-                            className="accent-[#0058BE]"
-                          />
-                          <span className="text-sm">Multiple Choice</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Image URL
-                      </label>
-                      <input
-                        type="text"
-                        value={question.imageUrl || ''}
-                        onChange={(e) =>
-                          updateQuestionImage(question.id, e.target.value)
-                        }
-                        placeholder="https://example.com/image.png"
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all"
-                      />
-                      {question.imageUrl?.trim() && (
-                        <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                          <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
-                            Preview
-                          </p>
-                          <img
-                            src={question.imageUrl.trim()}
-                            alt={`Question ${qIndex + 1} preview`}
-                            className="max-h-48 w-full object-contain rounded-lg"
-                            onError={(e) => {
-                              e.currentTarget.replaceWith(
-                                Object.assign(document.createElement('p'), {
-                                  className: 'text-sm text-red-500',
-                                  textContent: 'Unable to load image from this URL.',
-                                })
-                              );
-                            }}
-                          />
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={questionIds} strategy={verticalListSortingStrategy}>
+                    <div className="flex flex-col gap-4">
+                    {questions.map((question, qIndex) => (
+                      <SortableItem key={question.id} id={question.id}>
+                        <div className="flex items-start justify-between gap-3">
+                          <label className="text-sm font-semibold text-gray-700 pt-1">
+                            Question {qIndex + 1}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => removeQuestion(question.id)}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </div>
-                      )}
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Время на вопрос (секунды)
-                      </label>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                         <input
-                          type="number"
-                          min={1}
-                          value={question.unlimitedTime ? '' : question.timeLimit ?? ''}
-                          disabled={question.unlimitedTime}
+                          type="text"
+                          value={question.text}
                           onChange={(e) =>
-                            updateQuestionTimeLimit(question.id, e.target.value)
+                            updateQuestionText(question.id, e.target.value)
                           }
-                          placeholder={String(timePerQuestion)}
-                          className="w-full sm:w-48 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                          placeholder="Enter question text..."
+                          className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all placeholder:text-gray-400"
                         />
-                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Question Type
+                          </label>
+                          <div className="flex gap-6 mt-2">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`type-${question.id}`}
+                                checked={question.type === 'SINGLE'}
+                                onChange={() => updateQuestionType(question.id, 'SINGLE')}
+                                className="accent-[#0058BE]"
+                              />
+                              <span className="text-sm">Single Choice</span>
+                            </label>
+
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`type-${question.id}`}
+                                checked={question.type === 'MULTIPLE'}
+                                onChange={() => updateQuestionType(question.id, 'MULTIPLE')}
+                                className="accent-[#0058BE]"
+                              />
+                              <span className="text-sm">Multiple Choice</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Image URL
+                          </label>
                           <input
-                            type="checkbox"
-                            checked={Boolean(question.unlimitedTime)}
+                            type="text"
+                            value={question.imageUrl || ''}
                             onChange={(e) =>
-                              updateQuestionUnlimited(question.id, e.target.checked)
+                              updateQuestionImage(question.id, e.target.value)
                             }
-                            className="w-4 h-4 accent-[#0058BE]"
+                            placeholder="https://example.com/image.png"
+                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all"
                           />
-                          <span className="text-sm text-gray-700">
-                            Без ограничения времени
-                          </span>
-                        </label>
-                      </div>
-                    </div>
+                          {question.imageUrl?.trim() && (
+                            <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                              <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                                Preview
+                              </p>
+                              <img
+                                src={question.imageUrl.trim()}
+                                alt={`Question ${qIndex + 1} preview`}
+                                className="max-h-48 w-full object-contain rounded-lg"
+                                onError={(e) => {
+                                  e.currentTarget.replaceWith(
+                                    Object.assign(document.createElement('p'), {
+                                      className: 'text-sm text-red-500',
+                                      textContent: 'Unable to load image from this URL.',
+                                    })
+                                  );
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
 
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-gray-700">
-                          Answer Options
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => addOption(question.id)}
-                          className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0058BE] hover:text-blue-700 transition-colors"
-                        >
-                          <Plus size={15} />
-                          Add Option
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {question.options.map((option, oIndex) => (
-                          <div key={option.id} className="flex items-center gap-3">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Время на вопрос (секунды)
+                          </label>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             <input
-                              type={question.type === 'SINGLE' ? 'radio' : 'checkbox'}
-                              name={`correct-${question.id}`}
-                              checked={option.isCorrect}
-                              onChange={() => setCorrectAnswer(question.id, oIndex)}
-                              className="w-4 h-4 accent-[#0058BE]"
-                            />
-
-                            <input
-                              type="text"
-                              value={option.text}
+                              type="number"
+                              min={1}
+                              value={question.unlimitedTime ? '' : question.timeLimit ?? ''}
+                              disabled={question.unlimitedTime}
                               onChange={(e) =>
-                                updateOption(question.id, oIndex, e.target.value)
+                                updateQuestionTimeLimit(question.id, e.target.value)
                               }
-                              placeholder={`Answer option ${oIndex + 1}`}
-                              className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all text-sm"
+                              placeholder={String(timePerQuestion)}
+                              className="w-full sm:w-48 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                             />
+                            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(question.unlimitedTime)}
+                                onChange={(e) =>
+                                  updateQuestionUnlimited(question.id, e.target.checked)
+                                }
+                                className="w-4 h-4 accent-[#0058BE]"
+                              />
+                              <span className="text-sm text-gray-700">
+                                Без ограничения времени
+                              </span>
+                            </label>
+                          </div>
+                        </div>
 
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-semibold text-gray-700">
+                              Answer Options
+                            </label>
                             <button
                               type="button"
-                              onClick={() => removeOption(question.id, oIndex)}
-                              disabled={question.options.length <= 2}
-                              className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                              title="Remove option"
+                              onClick={() => addOption(question.id)}
+                              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0058BE] hover:text-blue-700 transition-colors"
                             >
-                              <Trash2 size={16} />
+                              <Plus size={15} />
+                              Add Option
                             </button>
                           </div>
-                        ))}
-                      </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {question.options.map((option, oIndex) => (
+                              <div key={option.id} className="flex items-center gap-3">
+                                <input
+                                  type={question.type === 'SINGLE' ? 'radio' : 'checkbox'}
+                                  name={`correct-${question.id}`}
+                                  checked={option.isCorrect}
+                                  onChange={() => setCorrectAnswer(question.id, oIndex)}
+                                  className="w-4 h-4 accent-[#0058BE]"
+                                />
+
+                                <input
+                                  type="text"
+                                  value={option.text}
+                                  onChange={(e) =>
+                                    updateOption(question.id, oIndex, e.target.value)
+                                  }
+                                  placeholder={`Answer option ${oIndex + 1}`}
+                                  className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all text-sm"
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={() => removeOption(question.id, oIndex)}
+                                  disabled={question.options.length <= 2}
+                                  className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                  title="Remove option"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </SortableItem>
+                    ))}
                     </div>
-                  </div>
-                ))}
+                  </SortableContext>
+                </DndContext>
               </div>
             </div>
 
