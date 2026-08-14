@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import { Crown, LogOut, Sparkles, Star, Trophy, User } from "lucide-react";
 import { sessionService } from "../services/sessionService";
-import { clearAuth } from "../api/axios";
+import { clearAuth, getWebSocketUrl } from "../api/axios";
 
 const AVATAR_GRADIENTS = [
   "from-blue-400 to-blue-600",
@@ -220,7 +220,7 @@ export default function Leaderboard() {
 
   useEffect(() => {
     const client = new Client({
-      brokerURL: "ws://localhost:8080/ws",
+      brokerURL: getWebSocketUrl(),
       reconnectDelay: 5000,
 
       onConnect: () => {

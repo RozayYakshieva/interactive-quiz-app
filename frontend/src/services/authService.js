@@ -1,7 +1,5 @@
 import axios from "axios";
-import { authHeaders } from "../api/axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "";
+import { API_URL, authHeaders } from "../api/axios";
 
 const authClient = axios.create({
   baseURL: API_URL,

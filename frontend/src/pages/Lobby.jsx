@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Bell, Copy, User, X } from "lucide-react";
 import { Client } from "@stomp/stompjs";
 import { sessionService } from "../services/sessionService";
+import { getWebSocketUrl } from "../api/axios";
 
 function formatCode(code) {
   if (!code || code.length !== 6) return code;
@@ -79,7 +80,7 @@ export default function Lobby() {
     if (!session) return;
 
     const stompClient = new Client({
-      brokerURL: "ws://localhost:8080/ws",
+      brokerURL: getWebSocketUrl(),
       reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(`/topic/session/${session.id}`, (message) => {

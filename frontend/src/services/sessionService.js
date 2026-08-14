@@ -1,4 +1,12 @@
-import api, { authHeaders, getAuthToken } from "../api/axios";
+import axios from "axios";
+import { API_URL, authHeaders, getAuthToken } from "../api/axios";
+
+const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export const sessionService = {
   async startSession(quizId) {
@@ -7,47 +15,50 @@ export const sessionService = {
       throw new Error("Not authenticated. Please log in again.");
     }
 
-    const response = await api.post(
-      "/sessions",
-      { quizId: Number(quizId) },
+    const response = await apiClient.post(
+      `/api/quizzes/${quizId}/start`,
+      {},
       { headers: authHeaders() }
     );
     return response.data;
   },
 
   async getSessionByCode(code) {
-    const response = await api.get(`/sessions/code/${code}`, {
+    const response = await apiClient.get(`/api/sessions/code/${code}`, {
       headers: authHeaders(),
     });
     return response.data;
   },
 
   async cancelSession(code) {
-    await api.delete(`/sessions/code/${code}`, {
+    await apiClient.delete(`/api/sessions/code/${code}`, {
       headers: authHeaders(),
     });
   },
 
   async getCurrentQuestion(sessionId) {
-    const response = await api.get(`/sessions/${sessionId}/current-question`);
+    const response = await apiClient.get(
+      `/api/sessions/${sessionId}/current-question`
+    );
     return response.data;
   },
 
   async joinSession(data) {
-    const response = await api.post("/sessions/join", data);
+    const response = await apiClient.post("/api/sessions/join", data);
     return response.data;
   },
 
   async getParticipants(sessionId) {
-    const response = await api.get(`/sessions/${sessionId}/participants`, {
-      headers: authHeaders(),
-    });
+    const response = await apiClient.get(
+      `/api/sessions/${sessionId}/participants`,
+      { headers: authHeaders() }
+    );
     return response.data;
   },
 
   async startGame(sessionId) {
-    const response = await api.post(
-      `/sessions/${sessionId}/start`,
+    const response = await apiClient.post(
+      `/api/sessions/${sessionId}/start`,
       {},
       { headers: authHeaders() }
     );
@@ -60,18 +71,23 @@ export const sessionService = {
       ...payload,
       participantId: participantId ? Number(participantId) : undefined,
     };
-    const response = await api.post(`/sessions/${sessionId}/answer`, body);
+    const response = await apiClient.post(
+      `/api/sessions/${sessionId}/answer`,
+      body
+    );
     return response.data;
   },
 
   async getAnswerProgress(sessionId) {
-    const response = await api.get(`/sessions/${sessionId}/answer-progress`);
+    const response = await apiClient.get(
+      `/api/sessions/${sessionId}/answer-progress`
+    );
     return response.data;
   },
 
   async nextQuestion(sessionId) {
-    const response = await api.post(
-      `/sessions/${sessionId}/next-question`,
+    const response = await apiClient.post(
+      `/api/sessions/${sessionId}/next-question`,
       {},
       { headers: authHeaders() }
     );
@@ -79,13 +95,15 @@ export const sessionService = {
   },
 
   async getLeaderboard(sessionId) {
-    const response = await api.get(`/sessions/${sessionId}/leaderboard`);
+    const response = await apiClient.get(
+      `/api/sessions/${sessionId}/leaderboard`
+    );
     return response.data;
   },
 
   async finishGame(sessionId) {
-    const response = await api.post(
-      `/sessions/${sessionId}/finish`,
+    const response = await apiClient.post(
+      `/api/sessions/${sessionId}/finish`,
       {},
       { headers: authHeaders() }
     );
@@ -93,7 +111,7 @@ export const sessionService = {
   },
 
   async getHistory() {
-    const response = await api.get("/sessions/history", {
+    const response = await apiClient.get("/api/sessions/history", {
       headers: authHeaders(),
     });
     return response.data;

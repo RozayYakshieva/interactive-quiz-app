@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import { sessionService } from "../services/sessionService";
+import { getWebSocketUrl } from "../api/axios";
 
 function normalizeQuestion(payload) {
   if (payload.answerOptions) {
@@ -83,7 +84,7 @@ export default function HostQuestion() {
 
   useEffect(() => {
     const client = new Client({
-      brokerURL: "ws://localhost:8080/ws",
+      brokerURL: getWebSocketUrl(),
       reconnectDelay: 5000,
       onConnect: () => {
         client.subscribe(`/topic/session/${sessionId}`, (message) => {
