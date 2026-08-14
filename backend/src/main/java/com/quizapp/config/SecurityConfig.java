@@ -34,38 +34,38 @@ public class SecurityConfig {
     JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtService, userRepository);
 
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .csrf(AbstractHttpConfigurer::disable)
-        .httpBasic(AbstractHttpConfigurer::disable)
-        .formLogin(AbstractHttpConfigurer::disable)
-        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers(HttpMethod.OPTIONS, "/**")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/auth/register")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/auth/login")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/auth/reset-password")
-                    .permitAll()
-                    .requestMatchers("/ws/**")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/sessions/join")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/sessions/*/answer")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/sessions/*/answer-progress")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/sessions/*/leaderboard")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
-        .exceptionHandling(
-            ex ->
-                ex.authenticationEntryPoint(
-                    (request, response, authException) ->
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
-        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .csrf(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .formLogin(AbstractHttpConfigurer::disable)
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(
+                    auth ->
+                            auth.requestMatchers(HttpMethod.OPTIONS, "/**")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.POST, "/api/auth/register")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.POST, "/api/auth/login")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.POST, "/api/auth/reset-password")
+                                    .permitAll()
+                                    .requestMatchers("/ws/**")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.POST, "/api/sessions/join")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.POST, "/api/sessions/*/answer")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.GET, "/api/sessions/*/answer-progress")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.GET, "/api/sessions/*/leaderboard")
+                                    .permitAll()
+                                    .anyRequest()
+                                    .authenticated())
+            .exceptionHandling(
+                    ex ->
+                            ex.authenticationEntryPoint(
+                                    (request, response, authException) ->
+                                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
@@ -86,11 +86,8 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    configuration.setAllowedOriginPatterns(List.of(
-            "http://localhost:*",
-            "http://127.0.0.1:*",
-            "https://interactive-quiz-app-delta-tan.vercel.app"
-    ));
+    // Разрешаем все источники (для простоты, можно заменить на конкретный домен Vercel)
+    configuration.setAllowedOriginPatterns(List.of("*"));
 
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
     configuration.setAllowedHeaders(List.of("*"));
@@ -98,8 +95,8 @@ public class SecurityConfig {
     configuration.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/api/**", configuration);
-    source.registerCorsConfiguration("/ws/**", configuration);
+    // Применяем ко ВСЕМ путям, а не только /api/** и /ws/**
+    source.registerCorsConfiguration("/**", configuration);
     return source;
   }
 }
