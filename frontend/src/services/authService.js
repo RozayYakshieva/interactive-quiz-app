@@ -1,9 +1,19 @@
-import api, { authHeaders } from "../api/axios";
+import axios from "axios";
+import { authHeaders } from "../api/axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
+
+const authClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export const authService = {
   login: async (email, password) => {
     try {
-      const response = await api.post("/auth/login", { email, password });
+      const response = await authClient.post("/api/auth/login", { email, password });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -11,28 +21,28 @@ export const authService = {
   },
 
   register: async (data) => {
-    const response = await api.post("/auth/register", data);
+    const response = await authClient.post("/api/auth/register", data);
     return response.data;
   },
 
   getProfile: async () => {
-    const response = await api.get("/auth/me", { headers: authHeaders() });
+    const response = await authClient.get("/api/auth/me", { headers: authHeaders() });
     return response.data;
   },
 
   updateProfile: async (data) => {
-    const response = await api.put("/auth/profile", data, {
+    const response = await authClient.put("/api/auth/profile", data, {
       headers: authHeaders(),
     });
     return response.data;
   },
 
   changePassword: async (data) => {
-    await api.put("/auth/password", data, { headers: authHeaders() });
+    await authClient.put("/api/auth/password", data, { headers: authHeaders() });
   },
 
   resetPassword: async (data) => {
-    const response = await api.post("/auth/reset-password", data);
+    const response = await authClient.post("/api/auth/reset-password", data);
     return response.data;
   },
 };
