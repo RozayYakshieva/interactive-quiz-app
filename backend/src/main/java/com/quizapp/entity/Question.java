@@ -34,6 +34,9 @@ public class Question {
   @Builder.Default
   private QuestionType type = QuestionType.SINGLE;
 
+  @Column(name = "time_limit")
+  private Integer timeLimit;
+
   @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<AnswerOption> answerOptions = new ArrayList<>();

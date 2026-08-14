@@ -5,8 +5,10 @@ import { sessionService } from "../services/sessionService";
 import { getWebSocketUrl } from "../api/axios";
 
 function normalizeQuestion(payload) {
+  const timeLimit = payload.timeLimit ?? payload.duration ?? null;
+
   if (payload.answerOptions) {
-    return payload;
+    return { ...payload, timeLimit };
   }
 
   return {
@@ -14,8 +16,16 @@ function normalizeQuestion(payload) {
     text: payload.text,
     type: payload.type ?? "SINGLE",
     imageUrl: payload.imageUrl,
+    timeLimit,
     answerOptions: payload.options ?? payload.answerOptions ?? [],
   };
+}
+
+function getQuestionTimeLimit(question) {
+  const value = question?.timeLimit ?? question?.duration;
+  if (value == null || value === 0) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
 function isMultipleChoice(question) {
@@ -67,12 +77,13 @@ export default function PlayerQuestion() {
   const [answerResult, setAnswerResult] = useState(null);
   const [submitError, setSubmitError] = useState(null);
 
-  const [timeLeft, setTimeLeft] = useState(20);
+  const [timeLeft, setTimeLeft] = useState(null);
   const [answersLocked, setAnswersLocked] = useState(false);
 
   const multipleChoice = isMultipleChoice(question);
   const overallCorrect = Boolean(answerResult?.isCorrect ?? answerResult?.correct);
   const correctAnswersLabel = formatCorrectAnswers(question?.answerOptions);
+  const hasTimeLimit = getQuestionTimeLimit(question) > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -107,7 +118,6 @@ export default function PlayerQuestion() {
             setAnswered(false);
             setAnswerResult(null);
             setSubmitError(null);
-            setTimeLeft(20);
             setAnswersLocked(false);
           }
 
@@ -127,9 +137,17 @@ export default function PlayerQuestion() {
     if (!question) return;
     if (answersLocked) return;
 
+    const limit = getQuestionTimeLimit(question);
+    if (!limit) {
+      setTimeLeft(null);
+      return;
+    }
+
+    setTimeLeft(limit);
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
+        if (prev == null || prev <= 1) {
           clearInterval(timer);
           setAnswersLocked(true);
           return 0;
@@ -217,8 +235,12 @@ export default function PlayerQuestion() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="text-center mb-10">
-          <div className="text-6xl font-black text-blue-600">{timeLeft}</div>
-          <div className="text-gray-500 mt-2">seconds left</div>
+          <div className="text-6xl font-black text-blue-600">
+            {hasTimeLimit ? (timeLeft ?? getQuestionTimeLimit(question)) : "∞"}
+          </div>
+          <div className="text-gray-500 mt-2">
+            {hasTimeLimit ? "seconds left" : "no time limit"}
+          </div>
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-10">

@@ -19,4 +19,5 @@ public class WsQuestion {
   private QuestionType type;
   private List<AnswerOptionResponse> options;
   private Integer duration;
+  private Integer timeLimit;
 }

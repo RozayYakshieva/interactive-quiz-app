@@ -41,6 +41,7 @@ public class QuizService {
       question.setText(questionRequest.getText());
       question.setType(questionRequest.getType());
       question.setImageUrl(questionRequest.getImageUrl());
+      question.setTimeLimit(normalizeTimeLimit(questionRequest.getTimeLimit()));
       question.setQuiz(quiz);
 
       for (AnswerOptionRequest optionRequest : questionRequest.getOptions()) {
@@ -124,5 +125,12 @@ public class QuizService {
     if (!quiz.getOrganizer().getId().equals(user.getId())) {
       throw new IllegalArgumentException(message);
     }
+  }
+
+  private Integer normalizeTimeLimit(Integer timeLimit) {
+    if (timeLimit == null || timeLimit <= 0) {
+      return null;
+    }
+    return timeLimit;
   }
 }

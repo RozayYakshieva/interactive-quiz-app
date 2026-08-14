@@ -33,6 +33,7 @@ public class QuestionService {
     question.setType(request.getType());
     question.setQuiz(quiz);
     question.setImageUrl(normalizeImageUrl(request.getImageUrl()));
+    question.setTimeLimit(normalizeTimeLimit(request.getTimeLimit()));
 
     if (request.getOptions() != null && !request.getOptions().isEmpty()) {
       List<AnswerOption> answerOptions =
@@ -60,6 +61,7 @@ public class QuestionService {
         .text(question.getText())
         .type(question.getType())
         .imageUrl(question.getImageUrl())
+        .timeLimit(question.getTimeLimit())
         .answerOptions(
             question.getAnswerOptions().stream()
                 .map(
@@ -99,6 +101,7 @@ public class QuestionService {
     question.setText(request.getText());
     question.setType(request.getType());
     question.setImageUrl(normalizeImageUrl(request.getImageUrl()));
+    question.setTimeLimit(normalizeTimeLimit(request.getTimeLimit()));
 
     syncAnswerOptions(question, request.getOptions());
 
@@ -175,5 +178,12 @@ public class QuestionService {
       return null;
     }
     return imageUrl.trim();
+  }
+
+  private Integer normalizeTimeLimit(Integer timeLimit) {
+    if (timeLimit == null || timeLimit <= 0) {
+      return null;
+    }
+    return timeLimit;
   }
 }

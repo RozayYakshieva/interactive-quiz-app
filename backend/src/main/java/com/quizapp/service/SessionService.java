@@ -170,7 +170,7 @@ public class SessionService {
     if (!questions.isEmpty()) {
       Question firstQuestion = questions.get(0);
       webSocketService.sendQuestion(session.getId(), firstQuestion);
-      webSocketService.startQuestion(session.getId(), firstQuestion.getId());
+      webSocketService.startQuestion(session.getId(), firstQuestion);
     }
 
     webSocketService.sendEvent(session.getId(), "GAME_STARTED", "Game started!");
@@ -313,7 +313,7 @@ public class SessionService {
 
     Question question = questions.get(nextIndex);
     webSocketService.sendQuestion(session.getId(), question);
-    webSocketService.startQuestion(session.getId(), question.getId());
+    webSocketService.startQuestion(session.getId(), question);
 
     return questionService.toResponse(question);
   }
