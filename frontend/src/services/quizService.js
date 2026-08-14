@@ -1,7 +1,5 @@
 import axios from "axios";
-import api, { authHeaders } from "../api/axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "";
+import { API_URL, authHeaders } from "../api/axios";
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -19,43 +17,69 @@ export const quizService = {
   },
 
   async getQuizzes() {
-    const response = await api.get("/quizzes");
+    const response = await apiClient.get("/api/quizzes", {
+      headers: authHeaders(),
+    });
     return response.data;
   },
 
   async getQuizById(id) {
-    const response = await api.get(`/quizzes/${id}`);
+    const response = await apiClient.get(`/api/quizzes/${id}`, {
+      headers: authHeaders(),
+    });
     return response.data;
   },
 
   async getQuestions(quizId) {
-    const response = await api.get(`/quizzes/${quizId}/questions`);
+    const response = await apiClient.get(`/api/quizzes/${quizId}/questions`, {
+      headers: authHeaders(),
+    });
     return response.data;
   },
 
   async updateQuiz(id, quizData) {
-    const response = await api.put(`/quizzes/${id}`, quizData);
+    const response = await apiClient.put(`/api/quizzes/${id}`, quizData, {
+      headers: authHeaders(),
+    });
     return response.data;
   },
 
   async createQuestion(quizId, questionData) {
-    const response = await api.post(`/quizzes/${quizId}/questions`, questionData);
+    const response = await apiClient.post(
+      `/api/quizzes/${quizId}/questions`,
+      questionData,
+      { headers: authHeaders() }
+    );
     return response.data;
   },
 
   async updateQuestion(quizId, questionId, questionData) {
-    const response = await api.put(
-      `/quizzes/${quizId}/questions/${questionId}`,
-      questionData
+    const response = await apiClient.put(
+      `/api/quizzes/${quizId}/questions/${questionId}`,
+      questionData,
+      { headers: authHeaders() }
     );
     return response.data;
   },
 
   async deleteQuestion(quizId, questionId) {
-    await api.delete(`/quizzes/${quizId}/questions/${questionId}`);
+    await apiClient.delete(`/api/quizzes/${quizId}/questions/${questionId}`, {
+      headers: authHeaders(),
+    });
   },
 
   async deleteQuiz(id) {
-    await api.delete(`/quizzes/${id}`);
+    await apiClient.delete(`/api/quizzes/${id}`, {
+      headers: authHeaders(),
+    });
+  },
+
+  async startSession(quizId) {
+    const response = await apiClient.post(
+      `/api/quizzes/${quizId}/start`,
+      {},
+      { headers: authHeaders() }
+    );
+    return response.data;
   },
 };

@@ -1,11 +1,23 @@
 import axios from "axios";
 
+export const API_URL = import.meta.env.VITE_API_URL || "";
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+export function getWebSocketUrl() {
+  const base = API_URL.replace(/\/$/, "");
+  if (base) {
+    const wsBase = base.replace(/^https:/, "wss:").replace(/^http:/, "ws:");
+    return `${wsBase}/ws`;
+  }
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${window.location.host}/ws`;
+}
 
 let authToken = null;
 
