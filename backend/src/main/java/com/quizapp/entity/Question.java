@@ -37,6 +37,9 @@ public class Question {
   @Column(name = "time_limit")
   private Integer timeLimit;
 
+  @Column(name = "order_index", nullable = false)
+  private Integer orderIndex;
+
   @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<AnswerOption> answerOptions = new ArrayList<>();

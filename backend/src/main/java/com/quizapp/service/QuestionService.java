@@ -34,6 +34,7 @@ public class QuestionService {
     question.setQuiz(quiz);
     question.setImageUrl(normalizeImageUrl(request.getImageUrl()));
     question.setTimeLimit(normalizeTimeLimit(request.getTimeLimit()));
+    question.setOrderIndex(resolveOrderIndex(quizId, request.getOrderIndex()));
 
     if (request.getOptions() != null && !request.getOptions().isEmpty()) {
       List<AnswerOption> answerOptions =
@@ -62,6 +63,7 @@ public class QuestionService {
         .type(question.getType())
         .imageUrl(question.getImageUrl())
         .timeLimit(question.getTimeLimit())
+        .orderIndex(question.getOrderIndex())
         .answerOptions(
             question.getAnswerOptions().stream()
                 .map(
@@ -78,7 +80,7 @@ public class QuestionService {
   @Transactional(readOnly = true)
   public List<QuestionResponse> getQuestionByQuizId(Long quizId, User organizer) {
     getOwnedQuiz(quizId, organizer);
-    return questionsRepository.findByQuizIdWithOptionsOrderByIdAsc(quizId).stream()
+    return questionsRepository.findByQuizIdWithOptionsOrderByOrderIndexAsc(quizId).stream()
         .map(this::toResponse)
         .toList();
   }
@@ -102,6 +104,9 @@ public class QuestionService {
     question.setType(request.getType());
     question.setImageUrl(normalizeImageUrl(request.getImageUrl()));
     question.setTimeLimit(normalizeTimeLimit(request.getTimeLimit()));
+    if (request.getOrderIndex() != null) {
+      question.setOrderIndex(request.getOrderIndex());
+    }
 
     syncAnswerOptions(question, request.getOptions());
 
@@ -185,5 +190,13 @@ public class QuestionService {
       return null;
     }
     return timeLimit;
+  }
+
+  private Integer resolveOrderIndex(Long quizId, Integer requestedOrderIndex) {
+    if (requestedOrderIndex != null) {
+      return requestedOrderIndex;
+    }
+    Integer maxOrderIndex = questionsRepository.findMaxOrderIndexByQuizId(quizId);
+    return maxOrderIndex == null ? 0 : maxOrderIndex + 1;
   }
 }

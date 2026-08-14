@@ -14,5 +14,6 @@ public class QuestionResponse {
   private QuestionType type;
   private String imageUrl;
   private Integer timeLimit;
+  private Integer orderIndex;
   private List<AnswerOptionResponse> answerOptions;
 }

@@ -166,7 +166,7 @@ public class SessionService {
     session.setStartedAt(Instant.now());
     sessionRepository.save(session);
 
-    List<Question> questions = questionsRepository.findByQuizId(session.getQuiz().getId());
+    List<Question> questions = questionsRepository.findByQuizIdOrderByOrderIndexAsc(session.getQuiz().getId());
     if (!questions.isEmpty()) {
       Question firstQuestion = questions.get(0);
       webSocketService.sendQuestion(session.getId(), firstQuestion);
@@ -298,7 +298,7 @@ public class SessionService {
       throw new IllegalArgumentException("Session is not running");
     }
 
-    List<Question> questions = questionsRepository.findByQuizId(session.getQuiz().getId());
+    List<Question> questions = questionsRepository.findByQuizIdOrderByOrderIndexAsc(session.getQuiz().getId());
     int nextIndex = session.getCurrentQuestionIndex() + 1;
 
     if (nextIndex >= questions.size()) {
@@ -431,7 +431,7 @@ public class SessionService {
   }
 
   private Question getCurrentQuestionEntity(GameSession session, String emptyMessage) {
-    List<Question> questions = questionsRepository.findByQuizId(session.getQuiz().getId());
+    List<Question> questions = questionsRepository.findByQuizIdOrderByOrderIndexAsc(session.getQuiz().getId());
     int index = session.getCurrentQuestionIndex();
 
     if (index >= questions.size()) {

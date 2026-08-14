@@ -44,6 +44,7 @@ public class Quiz {
   private Instant createdAt;
 
   @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("orderIndex ASC")
   @Builder.Default
   private List<Question> questions = new ArrayList<>();
 }

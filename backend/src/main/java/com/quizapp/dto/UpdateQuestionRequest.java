@@ -23,4 +23,7 @@ public class UpdateQuestionRequest {
 
   @Min(value = 0, message = "Time limit must be 0 or greater")
   private Integer timeLimit;
+
+  @Min(value = 0, message = "Order index must be 0 or greater")
+  private Integer orderIndex;
 }

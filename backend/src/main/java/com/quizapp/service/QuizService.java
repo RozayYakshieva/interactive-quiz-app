@@ -36,12 +36,15 @@ public class QuizService {
     quiz.setStatus(QuizStatus.DRAFT);
     quiz.setOrganizer(organizer);
 
+    int questionIndex = 0;
     for (CreateQuestionRequest questionRequest : request.getQuestions()) {
       Question question = new Question();
       question.setText(questionRequest.getText());
       question.setType(questionRequest.getType());
       question.setImageUrl(questionRequest.getImageUrl());
       question.setTimeLimit(normalizeTimeLimit(questionRequest.getTimeLimit()));
+      question.setOrderIndex(
+          questionRequest.getOrderIndex() != null ? questionRequest.getOrderIndex() : questionIndex);
       question.setQuiz(quiz);
 
       for (AnswerOptionRequest optionRequest : questionRequest.getOptions()) {
@@ -53,6 +56,7 @@ public class QuizService {
       }
 
       quiz.getQuestions().add(question);
+      questionIndex += 1;
     }
 
     quizRepository.save(quiz);
