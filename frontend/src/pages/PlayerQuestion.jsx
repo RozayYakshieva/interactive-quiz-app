@@ -22,6 +22,22 @@ function isMultipleChoice(question) {
   return question?.type === "MULTIPLE";
 }
 
+function isOptionCorrect(option) {
+  return Boolean(option?.isCorrect ?? option?.correct);
+}
+
+function optionLetter(index) {
+  return String.fromCharCode(65 + index);
+}
+
+function formatCorrectAnswers(options = []) {
+  return options
+    .map((option, index) => ({ option, index }))
+    .filter(({ option }) => isOptionCorrect(option))
+    .map(({ option, index }) => `${optionLetter(index)}. ${option.text}`)
+    .join(", ");
+}
+
 function QuestionImage({ imageUrl }) {
   if (!imageUrl?.trim()) return null;
 
@@ -55,6 +71,8 @@ export default function PlayerQuestion() {
   const [answersLocked, setAnswersLocked] = useState(false);
 
   const multipleChoice = isMultipleChoice(question);
+  const overallCorrect = Boolean(answerResult?.isCorrect ?? answerResult?.correct);
+  const correctAnswersLabel = formatCorrectAnswers(question?.answerOptions);
 
   useEffect(() => {
     let cancelled = false;
@@ -215,17 +233,29 @@ export default function PlayerQuestion() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {question.answerOptions.map((option) => {
+            {question.answerOptions.map((option, index) => {
               const isSelected = selectedAnswers.includes(option.id);
-              const isCorrectAnswer = Boolean(
-                answerResult?.isCorrect ?? answerResult?.correct
-              );
-              const answeredOptionClass =
-                answered && isSelected
-                  ? isCorrectAnswer
-                    ? "bg-green-600 text-white border-green-600 shadow-xl"
-                    : "bg-red-600 text-white border-red-600 shadow-xl"
-                  : "";
+              const optionIsCorrect = isOptionCorrect(option);
+
+              let answeredOptionClass = "";
+              if (answered && multipleChoice) {
+                if (optionIsCorrect) {
+                  answeredOptionClass =
+                    "bg-green-100 text-green-800 border-green-500 shadow-xl";
+                } else if (isSelected) {
+                  answeredOptionClass =
+                    "bg-red-100 text-red-800 border-red-500 shadow-xl";
+                }
+              } else if (answered && isSelected) {
+                answeredOptionClass = overallCorrect
+                  ? "bg-green-600 text-white border-green-600 shadow-xl"
+                  : "bg-red-600 text-white border-red-600 shadow-xl";
+              }
+
+              const dimUnselected =
+                answered &&
+                !isSelected &&
+                !(multipleChoice && optionIsCorrect);
 
               return (
                 <button
@@ -252,22 +282,23 @@ export default function PlayerQuestion() {
                         : "bg-white border-gray-200 hover:border-blue-500 hover:bg-blue-50 hover:scale-105")
                     }
                     ${answersLocked || answered ? "cursor-not-allowed" : ""}
-                    ${answered && !isSelected ? "opacity-50" : ""}
+                    ${dimUnselected ? "opacity-50" : ""}
                   `}
                 >
                   <span className="flex items-center gap-3">
+                    <span className="inline-flex w-7 h-7 shrink-0 items-center justify-center rounded-full border border-current text-sm font-bold">
+                      {optionLetter(index)}
+                    </span>
                     {multipleChoice && (
                       <span
                         className={`inline-flex w-5 h-5 shrink-0 items-center justify-center rounded border ${
-                          isSelected
-                            ? `border-white bg-white ${
-                                answered
-                                  ? isCorrectAnswer
-                                    ? "text-green-600"
-                                    : "text-red-600"
-                                  : "text-blue-600"
-                              }`
-                            : "border-gray-300 bg-white text-transparent"
+                          answered && multipleChoice && optionIsCorrect
+                            ? "border-green-600 bg-white text-green-600"
+                            : answered && isSelected && !optionIsCorrect
+                              ? "border-red-600 bg-white text-red-600"
+                              : isSelected
+                                ? "border-white bg-white text-blue-600"
+                                : "border-gray-300 bg-white text-transparent"
                         }`}
                       >
                         ✓
@@ -296,15 +327,18 @@ export default function PlayerQuestion() {
             <div className="mt-10 text-center">
               <div
                 className={`inline-block px-8 py-4 rounded-2xl font-bold text-lg ${
-                  Boolean(answerResult?.isCorrect ?? answerResult?.correct)
+                  overallCorrect
                     ? "bg-green-100 text-green-700"
                     : "bg-red-100 text-red-700"
                 }`}
               >
-                {Boolean(answerResult?.isCorrect ?? answerResult?.correct)
-                  ? "Correct!"
-                  : "Incorrect!"}
+                {overallCorrect ? "Correct!" : "Incorrect!"}
               </div>
+              {multipleChoice && !overallCorrect && correctAnswersLabel && (
+                <p className="mt-4 text-sm font-medium text-gray-700">
+                  Правильные ответы: {correctAnswersLabel}
+                </p>
+              )}
             </div>
           )}
 
