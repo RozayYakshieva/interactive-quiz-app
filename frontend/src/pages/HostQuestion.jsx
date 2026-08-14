@@ -18,6 +18,26 @@ function normalizeQuestion(payload) {
   };
 }
 
+function isMultipleChoice(question) {
+  return question?.type === "MULTIPLE";
+}
+
+function isOptionCorrect(option) {
+  return Boolean(option?.isCorrect ?? option?.correct);
+}
+
+function optionLetter(index) {
+  return String.fromCharCode(65 + index);
+}
+
+function formatCorrectAnswers(options = []) {
+  return options
+    .map((option, index) => ({ option, index }))
+    .filter(({ option }) => isOptionCorrect(option))
+    .map(({ option, index }) => `${optionLetter(index)}. ${option.text}`)
+    .join(", ");
+}
+
 function QuestionImage({ imageUrl }) {
   if (!imageUrl?.trim()) return null;
 
@@ -147,6 +167,9 @@ export default function HostQuestion() {
   const canProceed =
     timeLeft === 0 ||
     (totalParticipants > 0 && answersCount >= totalParticipants);
+  const multipleChoice = isMultipleChoice(question);
+  const showResults = canProceed;
+  const correctAnswersLabel = formatCorrectAnswers(question?.answerOptions);
 
   if (loading) {
     return (
@@ -181,15 +204,39 @@ export default function HostQuestion() {
           <QuestionImage imageUrl={question.imageUrl} />
 
           <div className="grid grid-cols-2 gap-5">
-            {question.answerOptions.map((option) => (
-              <div
-                key={option.id}
-                className="rounded-2xl border bg-slate-50 p-6 text-xl font-semibold"
-              >
-                {option.text}
-              </div>
-            ))}
+            {question.answerOptions.map((option, index) => {
+              const optionIsCorrect = isOptionCorrect(option);
+              let resultClass = "border-gray-200 bg-slate-50";
+
+              if (showResults) {
+                if (optionIsCorrect) {
+                  resultClass = "border-green-500 bg-green-100 text-green-800";
+                } else {
+                  resultClass = "border-gray-200 bg-slate-50 opacity-60";
+                }
+              }
+
+              return (
+                <div
+                  key={option.id}
+                  className={`rounded-2xl border-2 p-6 text-xl font-semibold ${resultClass}`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="inline-flex w-8 h-8 shrink-0 items-center justify-center rounded-full border border-current text-sm font-bold">
+                      {optionLetter(index)}
+                    </span>
+                    {option.text}
+                  </span>
+                </div>
+              );
+            })}
           </div>
+
+          {showResults && multipleChoice && correctAnswersLabel && (
+            <p className="mt-6 text-center text-sm font-medium text-gray-700">
+              Правильные ответы: {correctAnswersLabel}
+            </p>
+          )}
 
           <div className="mt-10 flex justify-between items-center">
             <div className="text-xl font-semibold">

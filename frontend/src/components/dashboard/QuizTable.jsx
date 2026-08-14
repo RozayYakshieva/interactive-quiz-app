@@ -25,9 +25,12 @@ export default function QuizTable({ quizzes = [], onDelete }) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center">
         <p className="text-gray-500 mb-4">You don't have any quizzes yet.</p>
-        <button className="text-blue-600 font-medium hover:underline">
+        <Link
+          to="/create-quiz"
+          className="inline-flex items-center px-5 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+        >
           Create your first quiz →
-        </button>
+        </Link>
       </div>
     );
   }
