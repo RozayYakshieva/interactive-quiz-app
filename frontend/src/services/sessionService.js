@@ -38,8 +38,9 @@ export const sessionService = {
 
   async getCurrentQuestion(sessionId) {
     const response = await apiClient.get(
-      `/api/sessions/${sessionId}/current-question`
-    );
+      `/api/sessions/${sessionId}/current-question`, { 
+        headers: authHeaders(), 
+      });
     return response.data;
   },
 
