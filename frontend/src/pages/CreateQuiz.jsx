@@ -14,13 +14,15 @@ const TIME_OPTIONS = [
   { label: '90s', value: 90 },
 ];
 
-function createEmptyQuestion() {
+function createEmptyQuestion(defaultTimeLimit = 30) {
   return {
     id: crypto.randomUUID(),
     serverId: null,
     text: '',
     type: 'SINGLE',
     imageUrl: '',
+    timeLimit: defaultTimeLimit,
+    unlimitedTime: false,
     options: [
       { id: crypto.randomUUID(), serverId: null, text: '', isCorrect: false },
       { id: crypto.randomUUID(), serverId: null, text: '', isCorrect: false },
@@ -53,9 +55,11 @@ function extractApiError(error, fallback) {
   return data.message || data.detail || data.error || fallback;
 }
 
-function mapQuestionFromApi(question) {
+function mapQuestionFromApi(question, defaultTimeLimit = 30) {
   const options = question.answerOptions ?? question.options ?? [];
   const correctCount = options.filter((option) => option.isCorrect ?? option.correct).length;
+  const rawTimeLimit = question.timeLimit;
+  const unlimitedTime = rawTimeLimit == null || rawTimeLimit === 0;
 
   return {
     id: crypto.randomUUID(),
@@ -63,6 +67,8 @@ function mapQuestionFromApi(question) {
     text: question.text ?? '',
     type: normalizeQuestionType(question.type ?? (correctCount > 1 ? 'MULTIPLE' : 'SINGLE')),
     imageUrl: question.imageUrl ?? '',
+    timeLimit: unlimitedTime ? defaultTimeLimit : Number(rawTimeLimit),
+    unlimitedTime,
     options: options.map((option) => ({
       id: crypto.randomUUID(),
       serverId: option.id ?? null,
@@ -73,10 +79,15 @@ function mapQuestionFromApi(question) {
 }
 
 function toQuestionPayload(question) {
+  const timeLimit = question.unlimitedTime
+    ? null
+    : Number(question.timeLimit);
+
   return {
     text: question.text.trim(),
     type: normalizeQuestionType(question.type),
     imageUrl: question.imageUrl?.trim() || null,
+    timeLimit: Number.isFinite(timeLimit) && timeLimit > 0 ? timeLimit : null,
     options: question.options
       .filter((option) => option.text.trim())
       .map((option) => ({
@@ -107,6 +118,13 @@ function validateQuestions(questions) {
 
     if (!filledOptions.some((option) => option.isCorrect)) {
       return `Question ${index + 1}: select a correct answer.`;
+    }
+
+    if (!question.unlimitedTime) {
+      const limit = Number(question.timeLimit);
+      if (!Number.isFinite(limit) || limit <= 0) {
+        return `Question ${index + 1}: time limit must be greater than 0, or enable unlimited time.`;
+      }
     }
   }
 
@@ -147,8 +165,9 @@ export default function CreateQuiz() {
 
         setTitle(quiz.title ?? '');
         setDescription(quiz.description ?? '');
-        setTimePerQuestion(quiz.timePerQuestion ?? 30);
-        setQuestions(quizQuestions.map(mapQuestionFromApi));
+        const quizTime = quiz.timePerQuestion ?? 30;
+        setTimePerQuestion(quizTime);
+        setQuestions(quizQuestions.map((question) => mapQuestionFromApi(question, quizTime)));
         setDeletedQuestionIds([]);
       } catch (err) {
         if (cancelled) return;
@@ -166,7 +185,7 @@ export default function CreateQuiz() {
   }, [id]);
 
   const addQuestion = () => {
-    setQuestions((prev) => [...prev, createEmptyQuestion()]);
+    setQuestions((prev) => [...prev, createEmptyQuestion(timePerQuestion)]);
   };
 
   const removeQuestion = (questionId) => {
@@ -199,6 +218,31 @@ export default function CreateQuiz() {
     setQuestions((prev) =>
       prev.map((question) =>
         question.id === questionId ? { ...question, imageUrl: value } : question
+      )
+    );
+  };
+
+  const updateQuestionTimeLimit = (questionId, value) => {
+    const parsed = Number(value);
+    setQuestions((prev) =>
+      prev.map((question) =>
+        question.id === questionId
+          ? { ...question, timeLimit: Number.isFinite(parsed) ? parsed : '' }
+          : question
+      )
+    );
+  };
+
+  const updateQuestionUnlimited = (questionId, unlimitedTime) => {
+    setQuestions((prev) =>
+      prev.map((question) =>
+        question.id === questionId
+          ? {
+              ...question,
+              unlimitedTime,
+              timeLimit: question.timeLimit || timePerQuestion,
+            }
+          : question
       )
     );
   };
@@ -554,6 +598,38 @@ export default function CreateQuiz() {
                           />
                         </div>
                       )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Время на вопрос (секунды)
+                      </label>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <input
+                          type="number"
+                          min={1}
+                          value={question.unlimitedTime ? '' : question.timeLimit ?? ''}
+                          disabled={question.unlimitedTime}
+                          onChange={(e) =>
+                            updateQuestionTimeLimit(question.id, e.target.value)
+                          }
+                          placeholder={String(timePerQuestion)}
+                          className="w-full sm:w-48 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:border-[#0058BE] focus:ring-2 focus:ring-[#0058BE]/20 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        />
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(question.unlimitedTime)}
+                            onChange={(e) =>
+                              updateQuestionUnlimited(question.id, e.target.checked)
+                            }
+                            className="w-4 h-4 accent-[#0058BE]"
+                          />
+                          <span className="text-sm text-gray-700">
+                            Без ограничения времени
+                          </span>
+                        </label>
+                      </div>
                     </div>
 
                     <div className="space-y-3">

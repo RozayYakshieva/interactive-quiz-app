@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class WebSocketService {
 
-  private static final int DEFAULT_QUESTION_DURATION = 20;
   private static final String TOPIC_PREFIX = "/topic/session/";
 
   private final SimpMessagingTemplate messagingTemplate;
@@ -33,6 +32,8 @@ public class WebSocketService {
                         .build())
             .toList();
 
+    Integer timeLimit = resolveTimeLimit(question);
+
     WsQuestion wsQuestion =
         WsQuestion.builder()
             .questionId(question.getId())
@@ -40,7 +41,8 @@ public class WebSocketService {
             .imageUrl(question.getImageUrl())
             .type(question.getType())
             .options(options)
-            .duration(DEFAULT_QUESTION_DURATION)
+            .duration(timeLimit)
+            .timeLimit(timeLimit)
             .build();
 
     send(sessionId, "QUESTION", wsQuestion);
@@ -64,14 +66,22 @@ public class WebSocketService {
     send(sessionId, "EVENT", gameEvent);
   }
 
-  public void startQuestion(Long sessionId, Long questionId) {
+  public void startQuestion(Long sessionId, Question question) {
     QuestionStartedEvent event =
         QuestionStartedEvent.builder()
-            .questionId(questionId)
-            .duration(DEFAULT_QUESTION_DURATION)
+            .questionId(question.getId())
+            .duration(resolveTimeLimit(question))
             .build();
 
     send(sessionId, "QUESTION_STARTED", event);
+  }
+
+  private Integer resolveTimeLimit(Question question) {
+    Integer timeLimit = question.getTimeLimit();
+    if (timeLimit == null || timeLimit <= 0) {
+      return 0;
+    }
+    return timeLimit;
   }
 
   private void send(Long sessionId, String type, Object payload) {

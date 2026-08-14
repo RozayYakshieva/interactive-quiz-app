@@ -13,5 +13,6 @@ public class QuestionResponse {
   private String text;
   private QuestionType type;
   private String imageUrl;
+  private Integer timeLimit;
   private List<AnswerOptionResponse> answerOptions;
 }

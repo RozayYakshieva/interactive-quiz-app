@@ -1,6 +1,7 @@
 package com.quizapp.dto;
 
 import com.quizapp.enums.QuestionType;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -19,4 +20,7 @@ public class UpdateQuestionRequest {
   private List<AnswerOptionRequest> options;
 
   private String imageUrl;
+
+  @Min(value = 0, message = "Time limit must be 0 or greater")
+  private Integer timeLimit;
 }

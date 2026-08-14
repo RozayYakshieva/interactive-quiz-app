@@ -5,8 +5,10 @@ import { sessionService } from "../services/sessionService";
 import { getWebSocketUrl } from "../api/axios";
 
 function normalizeQuestion(payload) {
+  const timeLimit = payload.timeLimit ?? payload.duration ?? null;
+
   if (payload.answerOptions) {
-    return payload;
+    return { ...payload, timeLimit };
   }
 
   return {
@@ -14,8 +16,16 @@ function normalizeQuestion(payload) {
     text: payload.text,
     type: payload.type ?? "SINGLE",
     imageUrl: payload.imageUrl,
+    timeLimit,
     answerOptions: payload.options ?? payload.answerOptions ?? [],
   };
+}
+
+function getQuestionTimeLimit(question) {
+  const value = question?.timeLimit ?? question?.duration;
+  if (value == null || value === 0) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
 function isMultipleChoice(question) {
@@ -60,7 +70,7 @@ export default function HostQuestion() {
   const navigate = useNavigate();
 
   const [question, setQuestion] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(20);
+  const [timeLeft, setTimeLeft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [answersCount, setAnswersCount] = useState(0);
   const [totalParticipants, setTotalParticipants] = useState(0);
@@ -112,7 +122,6 @@ export default function HostQuestion() {
 
           if (body.type === "QUESTION") {
             setQuestion(normalizeQuestion(body.payload));
-            setTimeLeft(20);
             setAnswersCount(0);
             refreshAnswerProgress();
           }
@@ -140,9 +149,17 @@ export default function HostQuestion() {
   useEffect(() => {
     if (!question) return;
 
+    const limit = getQuestionTimeLimit(question);
+    if (!limit) {
+      setTimeLeft(null);
+      return;
+    }
+
+    setTimeLeft(limit);
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
+        if (prev == null || prev <= 1) {
           clearInterval(timer);
           return 0;
         }
@@ -164,11 +181,13 @@ export default function HostQuestion() {
     }
   }
 
-  const canProceed =
-    timeLeft === 0 ||
-    (totalParticipants > 0 && answersCount >= totalParticipants);
+  const hasTimeLimit = getQuestionTimeLimit(question) > 0;
+  const timeExpired = hasTimeLimit && timeLeft === 0;
+  const allAnswered =
+    totalParticipants > 0 && answersCount >= totalParticipants;
+  const canProceed = !hasTimeLimit || timeExpired || allAnswered;
+  const showResults = timeExpired || allAnswered;
   const multipleChoice = isMultipleChoice(question);
-  const showResults = canProceed;
   const correctAnswersLabel = formatCorrectAnswers(question?.answerOptions);
 
   if (loading) {
@@ -193,8 +212,12 @@ export default function HostQuestion() {
           </div>
 
           <div className="text-center">
-            <div className="text-6xl font-black text-blue-600">{timeLeft}</div>
-            <div className="text-gray-500">seconds</div>
+            <div className="text-6xl font-black text-blue-600">
+              {hasTimeLimit ? (timeLeft ?? getQuestionTimeLimit(question)) : "∞"}
+            </div>
+            <div className="text-gray-500">
+              {hasTimeLimit ? "seconds" : "no time limit"}
+            </div>
           </div>
         </div>
 
