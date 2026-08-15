@@ -117,4 +117,11 @@ export const sessionService = {
     });
     return response.data;
   },
+
+  async getSessionDetails(sessionId) {
+    const response = await apiClient.get(`/api/sessions/${sessionId}/details`, {
+      headers: authHeaders(),
+    });
+    return response.data;
+  },
 };

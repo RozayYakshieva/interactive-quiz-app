@@ -8,6 +8,7 @@ import {
   Eye,
 } from "lucide-react";
 import Sidebar from "../components/dashboard/Sidebar";
+import SessionDetailsModal from "../components/history/SessionDetailsModal";
 import { sessionService } from "../services/sessionService";
 import { clearAuth } from "../api/axios";
 
@@ -15,6 +16,10 @@ export default function History() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [details, setDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -81,10 +86,37 @@ export default function History() {
     return status.charAt(0) + status.slice(1).toLowerCase();
   };
 
-  const handleViewResults = (session) => {
+  const handleViewDetails = async (session) => {
     const sessionId = getSessionId(session);
     if (!sessionId) return;
-    navigate(`/leaderboard/${sessionId}`);
+
+    setSelectedSession(session);
+    setDetails(null);
+    setDetailsError(null);
+    setDetailsLoading(true);
+
+    try {
+      const data = await sessionService.getSessionDetails(sessionId);
+      setDetails(data);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        clearAuth();
+        navigate("/login");
+        return;
+      }
+      setDetailsError(
+        error.response?.data?.message || "Failed to load session details"
+      );
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedSession(null);
+    setDetails(null);
+    setDetailsError(null);
+    setDetailsLoading(false);
   };
 
   if (loading) {
@@ -146,14 +178,15 @@ export default function History() {
                       <th className="px-6 py-4 font-semibold">Date</th>
                       <th className="px-6 py-4 font-semibold">Players</th>
                       <th className="px-6 py-4 font-semibold">Status</th>
-                      <th className="px-6 py-4 font-semibold text-right">Results</th>
+                      <th className="px-6 py-4 font-semibold text-right">Details</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {sessions.map((session, index) => (
                       <tr
                         key={getSessionId(session) || index}
-                        className="hover:bg-slate-50 transition"
+                        className="hover:bg-slate-50 transition cursor-pointer"
+                        onClick={() => handleViewDetails(session)}
                       >
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
@@ -191,11 +224,14 @@ export default function History() {
                         </td>
                         <td className="px-6 py-5 text-right">
                           <button
-                            onClick={() => handleViewResults(session)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleViewDetails(session);
+                            }}
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-600 font-semibold text-sm hover:bg-blue-100 transition"
                           >
                             <Eye size={16} />
-                            View Results
+                            View Details
                           </button>
                         </td>
                       </tr>
@@ -206,7 +242,11 @@ export default function History() {
 
               <div className="md:hidden divide-y divide-gray-100">
                 {sessions.map((session, index) => (
-                  <div key={getSessionId(session) || index} className="p-5">
+                  <div
+                    key={getSessionId(session) || index}
+                    className="p-5 cursor-pointer"
+                    onClick={() => handleViewDetails(session)}
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 shrink-0 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
@@ -234,11 +274,14 @@ export default function History() {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleViewResults(session)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleViewDetails(session);
+                      }}
                       className="w-full mt-5 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
                     >
                       <Eye size={17} />
-                      View Results
+                      View Details
                     </button>
                   </div>
                 ))}
@@ -247,6 +290,16 @@ export default function History() {
           )}
         </div>
       </main>
+
+      <SessionDetailsModal
+        open={Boolean(selectedSession)}
+        onClose={handleCloseDetails}
+        sessionTitle={selectedSession ? getQuizTitle(selectedSession) : ""}
+        sessionCode={selectedSession?.code}
+        details={details}
+        loading={detailsLoading}
+        error={detailsError}
+      />
     </div>
   );
 }

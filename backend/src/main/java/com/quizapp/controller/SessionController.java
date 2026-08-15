@@ -46,6 +46,13 @@ public class SessionController {
         sessionService.getSessionHistory(AuthUtils.getCurrentUser(authentication)));
   }
 
+  @GetMapping("/{id}/details")
+  public ResponseEntity<SessionDetailsResponse> getSessionDetails(
+      @PathVariable Long id, Authentication authentication) {
+    return ResponseEntity.ok(
+        sessionService.getSessionDetails(id, AuthUtils.getCurrentUser(authentication)));
+  }
+
   @GetMapping("/{id}/current-question")
   public ResponseEntity<QuestionResponse> getCurrentQuestion(@PathVariable Long id) {
     return ResponseEntity.ok(sessionService.getCurrentQuestion(id));
