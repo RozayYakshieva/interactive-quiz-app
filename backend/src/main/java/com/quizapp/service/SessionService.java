@@ -9,8 +9,10 @@ import com.quizapp.repository.*;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -365,6 +367,100 @@ public class SessionService {
         .stream()
         .map(this::toHistoryResponse)
         .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public SessionDetailsResponse getSessionDetails(Long sessionId, User organizer) {
+    GameSession session = findSessionById(sessionId);
+    requireOrganizer(session, organizer, "Only organizer can view session details");
+
+    List<Question> questions =
+        questionsRepository.findByQuizIdOrderByOrderIndexAsc(session.getQuiz().getId());
+    List<Participant> participants =
+        participantRepository.findBySessionIdWithUserOrderByScoreDesc(session.getId());
+    List<UserAnswer> userAnswers = userAnswerRepository.findBySessionIdWithOptions(sessionId);
+
+    Map<Long, Map<Long, List<UserAnswer>>> answersByParticipantAndQuestion = new HashMap<>();
+    for (UserAnswer userAnswer : userAnswers) {
+      answersByParticipantAndQuestion
+          .computeIfAbsent(userAnswer.getParticipant().getId(), key -> new HashMap<>())
+          .computeIfAbsent(userAnswer.getQuestion().getId(), key -> new ArrayList<>())
+          .add(userAnswer);
+    }
+
+    List<SessionQuestionSummary> questionSummaries =
+        questions.stream()
+            .map(
+                question ->
+                    SessionQuestionSummary.builder()
+                        .id(question.getId())
+                        .text(question.getText())
+                        .orderIndex(question.getOrderIndex())
+                        .build())
+            .toList();
+
+    List<ParticipantDetailsResponse> participantDetails =
+        participants.stream()
+            .map(
+                participant ->
+                    toParticipantDetails(
+                        participant,
+                        questions,
+                        answersByParticipantAndQuestion.getOrDefault(
+                            participant.getId(), Map.of())))
+            .toList();
+
+    return SessionDetailsResponse.builder()
+        .id(session.getId())
+        .quizTitle(session.getQuiz().getTitle())
+        .code(session.getCode())
+        .status(session.getStatus().name())
+        .startedAt(session.getStartedAt())
+        .questions(questionSummaries)
+        .participants(participantDetails)
+        .build();
+  }
+
+  private ParticipantDetailsResponse toParticipantDetails(
+      Participant participant,
+      List<Question> questions,
+      Map<Long, List<UserAnswer>> answersByQuestion) {
+    List<ParticipantAnswerResponse> answers =
+        questions.stream()
+            .map(question -> toParticipantAnswer(question, answersByQuestion.get(question.getId())))
+            .toList();
+
+    return ParticipantDetailsResponse.builder()
+        .participantId(participant.getId())
+        .playerName(resolveDisplayName(participant))
+        .score(participant.getScore())
+        .answers(answers)
+        .build();
+  }
+
+  private ParticipantAnswerResponse toParticipantAnswer(
+      Question question, List<UserAnswer> selectedAnswers) {
+    if (selectedAnswers == null || selectedAnswers.isEmpty()) {
+      return ParticipantAnswerResponse.builder()
+          .questionId(question.getId())
+          .selectedAnswerText(null)
+          .isCorrect(false)
+          .answered(false)
+          .build();
+    }
+
+    String selectedText =
+        selectedAnswers.stream()
+            .map(UserAnswer::getAnswerOption)
+            .map(AnswerOption::getText)
+            .collect(Collectors.joining(", "));
+
+    return ParticipantAnswerResponse.builder()
+        .questionId(question.getId())
+        .selectedAnswerText(selectedText)
+        .isCorrect(selectedAnswers.get(0).isCorrect())
+        .answered(true)
+        .build();
   }
 
   private SessionHistoryResponse toHistoryResponse(GameSession session) {
