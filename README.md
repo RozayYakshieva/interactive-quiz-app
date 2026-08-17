@@ -2,7 +2,15 @@
 
 A full-stack platform for creating and hosting real-time quizzes. Hosts can build quizzes, launch game sessions, and follow player progress live, while participants join with a session code and compete from their own devices.
 
-This project was created as part of a summer practice program at SPbPU in collaboration with VK Education.
+## Screenshots
+
+### Home Page
+<img width="1366" height="909" alt="image" src="https://github.com/user-attachments/assets/4bb99fd1-0836-4b34-96a1-1a03970d940d" />
+
+### Dashboard
+<img width="1914" height="906" alt="image" src="https://github.com/user-attachments/assets/dede5a37-3f0a-45f3-b370-f6961c3e1b60" />
+
+
 
 ## Features
 
@@ -72,7 +80,7 @@ Install the following software before running the project locally:
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone <https://github.com/RozayYakshieva/interactive-quiz-app>
 cd interactive-quiz-app
 ```
 
@@ -148,29 +156,6 @@ npm run dev
 
 Open the URL shown by Vite, usually `http://localhost:5173`.
 
-## Available Scripts
-
-Run frontend commands from the `frontend` directory:
-
-```bash
-npm run dev       # Start the development server
-npm run build     # Create a production build
-npm run lint      # Run ESLint
-npm run preview   # Preview the production build
-```
-
-Run backend commands from the `backend` directory:
-
-```bash
-./gradlew bootRun          # Start the backend
-./gradlew test             # Run backend tests
-./gradlew spotlessCheck    # Check Java formatting
-./gradlew spotlessApply    # Apply Java formatting
-./gradlew bootJar          # Build an executable JAR
-```
-
-Use `gradlew.bat` instead of `gradlew` on Windows.
-
 ## Environment Variables
 
 | Variable | Description | Default |
@@ -180,8 +165,6 @@ Use `gradlew.bat` instead of `gradlew` on Windows.
 | `DB_PASSWORD` | PostgreSQL password | `local_dev_password` |
 | `JWT_SECRET` | Secret used to sign JWT tokens | Required |
 | `JWT_EXPIRATION` | Token lifetime in milliseconds | `86400000` |
-| `PORT` | Backend server port | `8080` |
-| `VITE_API_URL` | Backend URL used by the frontend | Same origin |
 
 ## Real-Time Communication
 
@@ -216,10 +199,16 @@ docker build -t interactive-quiz-backend ./backend
 
 Pass the database and JWT environment variables when starting the container.
 
-## Contributing
 
-1. Fork the repository.
-2. Create a feature branch.
-3. Make and test your changes.
-4. Commit your changes with a clear message.
-5. Open a pull request.
+
+## Live Demo
+
+**Application:**  
+http://interactive-quiz-app-delta-tan.vercel.app/
+
+## 🔗 Project Links
+
+- **GitHub:** https://github.com/RozayYakshieva/interactive-quiz-app
+- **Live Demo:** http://interactive-quiz-app-delta-tan.vercel.app/
+- **Figma:** https://www.figma.com/design/yv28ycOxCcIjBHw2ViTQpw/Quiz_app-design
+
