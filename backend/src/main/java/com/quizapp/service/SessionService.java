@@ -24,8 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class SessionService {
   private static final String CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   private static final int CODE_LENGTH = 6;
-  private static final int BASE_POINTS = 1000;
-  private static final double WRONG_OPTION_PENALTY = 0.25;
+  private static final int QUIZ_TOTAL_POINTS = 100;
+  private static final double WRONG_OPTION_PENALTY_RATE = 0.25;
   private static final SecureRandom RANDOM = new SecureRandom();
 
   private final GameSessionRepository sessionRepository;
@@ -165,16 +165,21 @@ public class SessionService {
       throw new IllegalArgumentException("Session is not in WAITING status");
     }
 
+    List<Question> questions =
+        questionsRepository.findByQuizIdOrderByOrderIndexAsc(session.getQuiz().getId());
+    if (questions.isEmpty()) {
+      throw new IllegalArgumentException("Quiz is not ready to start: add at least one question");
+    }
+
+    int basePoints = (int) Math.round((double) QUIZ_TOTAL_POINTS / questions.size());
+    session.setBasePoints(basePoints);
     session.setStatus(SessionStatus.RUNNING);
     session.setStartedAt(Instant.now());
     sessionRepository.save(session);
 
-    List<Question> questions = questionsRepository.findByQuizIdOrderByOrderIndexAsc(session.getQuiz().getId());
-    if (!questions.isEmpty()) {
-      Question firstQuestion = questions.get(0);
-      webSocketService.sendQuestion(session.getId(), firstQuestion);
-      webSocketService.startQuestion(session.getId(), firstQuestion);
-    }
+    Question firstQuestion = questions.get(0);
+    webSocketService.sendQuestion(session.getId(), firstQuestion);
+    webSocketService.startQuestion(session.getId(), firstQuestion);
 
     webSocketService.sendEvent(session.getId(), "GAME_STARTED", "Game started!");
     return toResponse(session);
@@ -189,7 +194,7 @@ public class SessionService {
 
   @Transactional
   public AnswerResponse submitAnswer(Long sessionId, SubmitAnswerRequest request, User user) {
-    findRunningSession(sessionId);
+    GameSession session = findRunningSession(sessionId);
     Participant participant = resolveParticipant(sessionId, request.getParticipantId(), user);
 
     Question question =
@@ -234,9 +239,13 @@ public class SessionService {
       throw new IllegalArgumentException("Single choice question accepts one answer only");
     }
 
-    double accuracy = accuracyFactor(question.getType(), selectedIds, correctIds);
-    boolean isCorrect = Double.compare(accuracy, 1.0) == 0;
-    int earnedPoints = calculatePoints(question, accuracy);
+    int totalQuestions = (int) questionsRepository.countByQuizId(session.getQuiz().getId());
+    int basePoints = resolveBasePoints(session, totalQuestions);
+    int earnedPoints =
+        calculatePoints(question.getType(), selectedIds, correctIds, basePoints);
+    int remainingPoints = Math.max(0, QUIZ_TOTAL_POINTS - participant.getScore());
+    earnedPoints = Math.min(earnedPoints, remainingPoints);
+    boolean isCorrect = selectedIds.equals(correctIds);
 
     if (earnedPoints > 0) {
       participant.setScore(participant.getScore() + earnedPoints);
@@ -553,29 +562,33 @@ public class SessionService {
         : participant.getNickname();
   }
 
-  private int calculatePoints(Question question, double accuracy) {
-    if (accuracy <= 0) {
+  private int resolveBasePoints(GameSession session, int totalQuestions) {
+    if (session.getBasePoints() != null && session.getBasePoints() > 0) {
+      return session.getBasePoints();
+    }
+    if (totalQuestions <= 0) {
       return 0;
     }
-    return (int) Math.round(BASE_POINTS * difficultyMultiplier(question) * accuracy);
+    return (int) Math.round((double) QUIZ_TOTAL_POINTS / totalQuestions);
   }
 
-  private double accuracyFactor(QuestionType type, Set<Long> selected, Set<Long> correct) {
-    if (correct.isEmpty()) {
+  private int calculatePoints(
+      QuestionType type, Set<Long> selected, Set<Long> correct, int basePoints) {
+    if (basePoints <= 0 || correct.isEmpty()) {
       return 0;
     }
 
     if (type != QuestionType.MULTIPLE) {
-      return selected.size() == 1 && correct.contains(selected.iterator().next()) ? 1.0 : 0.0;
+      boolean correctAnswer =
+          selected.size() == 1 && correct.contains(selected.iterator().next());
+      return correctAnswer ? basePoints : 0;
     }
 
     long foundCorrect = selected.stream().filter(correct::contains).count();
     long extraWrong = selected.stream().filter(id -> !correct.contains(id)).count();
-    double foundRatio = (double) foundCorrect / correct.size();
-    return Math.max(0.0, foundRatio - extraWrong * WRONG_OPTION_PENALTY);
-  }
-
-  private double difficultyMultiplier(Question question) {
-    return 1.0;
+    double accuracy = (double) foundCorrect / correct.size();
+    double penalty = extraWrong * basePoints * WRONG_OPTION_PENALTY_RATE;
+    double rawScore = Math.round(basePoints * accuracy) - penalty;
+    return (int) Math.max(0L, Math.round(rawScore));
   }
 }

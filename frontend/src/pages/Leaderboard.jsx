@@ -16,6 +16,14 @@ const AVATAR_GRADIENTS = [
   "from-rose-400 to-rose-600",
 ];
 
+const MAX_QUIZ_SCORE = 100;
+
+function formatScore(score) {
+  const value = Number(score);
+  const points = Number.isFinite(value) ? Math.round(value) : 0;
+  return `${points} / ${MAX_QUIZ_SCORE}`;
+}
+
 function getInitials(name) {
   return name
     .split(/\s+/)
@@ -132,7 +140,7 @@ function PodiumPlace({ player, place, isCurrentUser }) {
           {displayName}
         </p>
         <p className={`font-semibold mt-1 ${config.scoreColor}`}>
-          {player.score.toLocaleString()} pts
+          {formatScore(player.score)}
         </p>
       </div>
     </div>
@@ -175,7 +183,7 @@ function LeaderboardRow({ player, isCurrentUser }) {
       <span
         className={`font-bold text-lg shrink-0 ${isCurrentUser ? "text-violet-600" : "text-blue-600"}`}
       >
-        {player.score.toLocaleString()} pts
+        {formatScore(player.score)}
       </span>
     </div>
   );

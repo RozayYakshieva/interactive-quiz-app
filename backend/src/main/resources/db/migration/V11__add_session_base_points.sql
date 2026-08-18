@@ -1,0 +1,2 @@
+ALTER TABLE sessions
+    ADD COLUMN IF NOT EXISTS base_points INTEGER;

@@ -39,6 +39,9 @@ public class GameSession {
   @Column(name = "started_at")
   private Instant startedAt;
 
+  @Column(name = "base_points")
+  private Integer basePoints;
+
   @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<Participant> participants = new ArrayList<>();
