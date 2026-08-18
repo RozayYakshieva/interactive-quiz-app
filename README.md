@@ -10,6 +10,9 @@ A full-stack platform for creating and hosting real-time quizzes. Hosts can buil
 ### Dashboard
 <img width="1914" height="906" alt="image" src="https://github.com/user-attachments/assets/dede5a37-3f0a-45f3-b370-f6961c3e1b60" />
 
+### Live Quiz
+<img width="502" height="343" alt="image" src="https://github.com/user-attachments/assets/41af6346-ff9e-4bfd-88d0-5e4db5d7b90c" />
+
 
 
 ## Features
@@ -20,7 +23,7 @@ A full-stack platform for creating and hosting real-time quizzes. Hosts can buil
 - Drag-and-drop question reordering
 - Configurable time limits for questions
 - Live game sessions with unique join codes
-- Anonymous participant access
+- Seamless player join via session code (no registration required)
 - Real-time game updates over WebSockets
 - Answer progress tracking and live leaderboards
 - Host dashboard, session history, and profile settings
