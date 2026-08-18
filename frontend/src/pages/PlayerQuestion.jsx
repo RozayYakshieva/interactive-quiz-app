@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import { sessionService } from "../services/sessionService";
@@ -71,19 +71,46 @@ function resultBannerText({ overallCorrect, partiallyCorrect, earnedPoints }) {
   return "Incorrect!";
 }
 
-function QuestionImage({ imageUrl }) {
-  if (!imageUrl?.trim()) return null;
+function QuestionImage({ question }) {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const imgRef = useRef(null);
+  const imageUrl = question?.imageUrl?.trim();
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+
+    const img = imgRef.current;
+    if (img?.complete && img.naturalHeight > 0) {
+      setIsImageLoaded(true);
+    }
+  }, [question?.id]);
+
+  if (!imageUrl) return null;
 
   return (
     <div className="mb-8 flex justify-center">
-      <img
-        src={imageUrl.trim()}
-        alt="Question illustration"
-        className="max-h-64 rounded-2xl object-contain border border-gray-100 shadow-sm"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-      />
+      <div className="relative flex items-center justify-center">
+        {!isImageLoaded && (
+          <div
+            className="h-64 w-80 max-w-full animate-pulse rounded-2xl bg-gray-100"
+            aria-hidden="true"
+          />
+        )}
+        <img
+          key={question.id}
+          ref={imgRef}
+          src={imageUrl}
+          alt="Question illustration"
+          onLoad={() => setIsImageLoaded(true)}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+            setIsImageLoaded(true);
+          }}
+          className={`max-h-64 rounded-2xl object-contain border border-gray-100 shadow-sm transition-opacity duration-500 ease-in ${
+            isImageLoaded ? "opacity-100" : "pointer-events-none absolute opacity-0"
+          }`}
+        />
+      </div>
     </div>
   );
 }
@@ -278,7 +305,7 @@ export default function PlayerQuestion() {
         <div className="bg-white rounded-3xl shadow-xl p-10">
           <h1 className="text-3xl font-bold text-center mb-6">{question.text}</h1>
 
-          <QuestionImage imageUrl={question.imageUrl} />
+          <QuestionImage key={question.id} question={question} />
 
           {multipleChoice && !answered && (
             <p className="text-center text-sm text-gray-500 mb-6">
