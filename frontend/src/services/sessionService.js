@@ -24,9 +24,7 @@ export const sessionService = {
   },
 
   async getSessionByCode(code) {
-    const response = await apiClient.get(`/api/sessions/code/${code}`, {
-      headers: authHeaders(),
-    });
+    const response = await apiClient.get(`/api/sessions/code/${code}`);
     return response.data;
   },
 
@@ -38,21 +36,40 @@ export const sessionService = {
 
   async getCurrentQuestion(sessionId) {
     const response = await apiClient.get(
-      `/api/sessions/${sessionId}/current-question`, { 
-        headers: authHeaders(), 
-      });
+      `/api/sessions/${sessionId}/current-question`
+    );
     return response.data;
   },
 
   async joinSession(data) {
-    const response = await apiClient.post("/api/sessions/join", data);
-    return response.data;
+    const base = String(API_URL || "").replace(/\/$/, "");
+    const response = await fetch(`${base}/api/sessions/join`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+
+    if (!response.ok) {
+      const error = new Error(payload?.message || "Unable to join");
+      error.response = { data: payload, status: response.status };
+      throw error;
+    }
+
+    return payload;
   },
 
   async getParticipants(sessionId) {
     const response = await apiClient.get(
-      `/api/sessions/${sessionId}/participants`,
-      { headers: authHeaders() }
+      `/api/sessions/${sessionId}/participants`
     );
     return response.data;
   },

@@ -650,7 +650,7 @@ export default function CreateQuiz() {
 
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Время на вопрос (секунды)
+                            Time per question (seconds)
                           </label>
                           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             <input
@@ -674,7 +674,7 @@ export default function CreateQuiz() {
                                 className="w-4 h-4 accent-[#0058BE]"
                               />
                               <span className="text-sm text-gray-700">
-                                Без ограничения времени
+                                No time limit
                               </span>
                             </label>
                           </div>

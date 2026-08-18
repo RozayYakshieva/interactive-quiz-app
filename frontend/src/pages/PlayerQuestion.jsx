@@ -173,8 +173,15 @@ export default function PlayerQuestion() {
   const submitSingleAnswer = async (optionId) => {
     if (answersLocked || answered) return;
 
+    const selectedOption = question.answerOptions.find(
+      (option) => option.id === optionId
+    );
+    const instantlyCorrect = isOptionCorrect(selectedOption);
+
     setSelectedAnswers([optionId]);
     setSubmitError(null);
+    setAnswered(true);
+    setAnswerResult({ isCorrect: instantlyCorrect });
 
     try {
       const result = await sessionService.submitAnswer(sessionId, {
@@ -182,9 +189,7 @@ export default function PlayerQuestion() {
         answerOptionId: optionId,
       });
       setAnswerResult(result);
-      setAnswered(true);
     } catch (err) {
-      setSelectedAnswers([]);
       setSubmitError(
         err.response?.data?.message || "Failed to submit answer. Try again."
       );
@@ -258,26 +263,19 @@ export default function PlayerQuestion() {
             {question.answerOptions.map((option, index) => {
               const isSelected = selectedAnswers.includes(option.id);
               const optionIsCorrect = isOptionCorrect(option);
+              const showCorrect = answered && optionIsCorrect;
+              const showIncorrect = answered && isSelected && !optionIsCorrect;
 
               let answeredOptionClass = "";
-              if (answered && multipleChoice) {
-                if (optionIsCorrect) {
-                  answeredOptionClass =
-                    "bg-green-100 text-green-800 border-green-500 shadow-xl";
-                } else if (isSelected) {
-                  answeredOptionClass =
-                    "bg-red-100 text-red-800 border-red-500 shadow-xl";
-                }
-              } else if (answered && isSelected) {
-                answeredOptionClass = overallCorrect
-                  ? "bg-green-600 text-white border-green-600 shadow-xl"
-                  : "bg-red-600 text-white border-red-600 shadow-xl";
+              if (showCorrect) {
+                answeredOptionClass =
+                  "bg-green-100 text-green-800 border-green-500 shadow-xl";
+              } else if (showIncorrect) {
+                answeredOptionClass =
+                  "bg-red-100 text-red-800 border-red-500 shadow-xl";
               }
 
-              const dimUnselected =
-                answered &&
-                !isSelected &&
-                !(multipleChoice && optionIsCorrect);
+              const dimUnselected = answered && !isSelected && !optionIsCorrect;
 
               return (
                 <button
@@ -311,19 +309,25 @@ export default function PlayerQuestion() {
                     <span className="inline-flex w-7 h-7 shrink-0 items-center justify-center rounded-full border border-current text-sm font-bold">
                       {optionLetter(index)}
                     </span>
-                    {multipleChoice && (
+                    {multipleChoice && !answered && (
                       <span
                         className={`inline-flex w-5 h-5 shrink-0 items-center justify-center rounded border ${
-                          answered && multipleChoice && optionIsCorrect
-                            ? "border-green-600 bg-white text-green-600"
-                            : answered && isSelected && !optionIsCorrect
-                              ? "border-red-600 bg-white text-red-600"
-                              : isSelected
-                                ? "border-white bg-white text-blue-600"
-                                : "border-gray-300 bg-white text-transparent"
+                          isSelected
+                            ? "border-white bg-white text-blue-600"
+                            : "border-gray-300 bg-white text-transparent"
                         }`}
                       >
                         ✓
+                      </span>
+                    )}
+                    {showCorrect && (
+                      <span className="inline-flex w-6 h-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-white text-sm font-bold">
+                        ✓
+                      </span>
+                    )}
+                    {showIncorrect && (
+                      <span className="inline-flex w-6 h-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-white text-sm font-bold">
+                        ✕
                       </span>
                     )}
                     {option.text}
@@ -356,9 +360,9 @@ export default function PlayerQuestion() {
               >
                 {overallCorrect ? "Correct!" : "Incorrect!"}
               </div>
-              {multipleChoice && !overallCorrect && correctAnswersLabel && (
+              {!overallCorrect && correctAnswersLabel && (
                 <p className="mt-4 text-sm font-medium text-gray-700">
-                  Правильные ответы: {correctAnswersLabel}
+                  Correct answers: {correctAnswersLabel}
                 </p>
               )}
             </div>
