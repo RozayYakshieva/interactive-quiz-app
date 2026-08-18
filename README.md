@@ -11,7 +11,8 @@ A full-stack platform for creating and hosting real-time quizzes. Hosts can buil
 <img width="1914" height="906" alt="image" src="https://github.com/user-attachments/assets/dede5a37-3f0a-45f3-b370-f6961c3e1b60" />
 
 ### Live Quiz
-<img width="502" height="343" alt="image" src="https://github.com/user-attachments/assets/41af6346-ff9e-4bfd-88d0-5e4db5d7b90c" />
+<img width="1905" height="903" alt="image" src="https://github.com/user-attachments/assets/0adbdeff-ce37-4c94-b653-1b14bdbdb7ac" />
+
 
 
 
