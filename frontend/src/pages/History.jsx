@@ -141,7 +141,7 @@ export default function History() {
               <h1 className="text-3xl font-bold text-gray-900">History</h1>
             </div>
             <p className="text-gray-500">
-              View your previously hosted quiz sessions and results.
+              View your previously hosted quiz sessions and results. Final scores are out of 100.
             </p>
           </header>
 
@@ -299,6 +299,7 @@ export default function History() {
         details={details}
         loading={detailsLoading}
         error={detailsError}
+        maxScore={100}
       />
     </div>
   );

@@ -48,11 +48,24 @@ function formatCorrectAnswers(options = []) {
     .join(", ");
 }
 
+const MAX_QUIZ_SCORE = 100;
+
+function formatPoints(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed) : 0;
+}
+
 function getEarnedPoints(answerResult) {
   const value = answerResult?.earnedPoints;
   if (value == null) return null;
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isFinite(parsed) ? Math.round(parsed) : null;
+}
+
+function getCurrentScore(answerResult) {
+  const value = answerResult?.currentScore;
+  if (value == null) return null;
+  return formatPoints(value);
 }
 
 function resultBannerClass({ overallCorrect, partiallyCorrect }) {
@@ -68,7 +81,7 @@ function resultBannerText({ overallCorrect, partiallyCorrect, earnedPoints }) {
   if (overallCorrect) {
     return earnedPoints != null ? `Correct! +${earnedPoints} pts` : "Correct!";
   }
-  return "Incorrect!";
+  return earnedPoints != null ? `Incorrect! +${earnedPoints} pts` : "Incorrect!";
 }
 
 function QuestionImage({ question }) {
@@ -133,6 +146,7 @@ export default function PlayerQuestion() {
   const multipleChoice = isMultipleChoice(question);
   const overallCorrect = Boolean(answerResult?.isCorrect ?? answerResult?.correct);
   const earnedPoints = getEarnedPoints(answerResult);
+  const currentScore = getCurrentScore(answerResult);
   const partiallyCorrect = Boolean(
     answered && !overallCorrect && earnedPoints != null && earnedPoints > 0
   );
@@ -416,6 +430,11 @@ export default function PlayerQuestion() {
                   earnedPoints,
                 })}
               </div>
+              {currentScore != null && (
+                <p className="mt-3 text-sm font-semibold text-gray-600">
+                  Score: {currentScore} / {MAX_QUIZ_SCORE}
+                </p>
+              )}
               {!overallCorrect && correctAnswersLabel && (
                 <p className="mt-4 text-sm font-medium text-gray-700">
                   Correct answers: {correctAnswersLabel}

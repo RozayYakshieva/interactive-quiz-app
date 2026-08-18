@@ -35,6 +35,12 @@ function AnswerCell({ answer }) {
   );
 }
 
+function formatScore(score, maxScore = 100) {
+  const value = Number(score);
+  const points = Number.isFinite(value) ? Math.round(value) : 0;
+  return `${points} / ${maxScore}`;
+}
+
 export default function SessionDetailsModal({
   open,
   onClose,
@@ -43,6 +49,7 @@ export default function SessionDetailsModal({
   details,
   loading,
   error,
+  maxScore = 100,
 }) {
   useEffect(() => {
     if (!open) return undefined;
@@ -149,7 +156,7 @@ export default function SessionDetailsModal({
                         {participant.playerName}
                       </td>
                       <td className="sticky left-[180px] z-10 bg-white px-4 py-4 font-bold text-blue-600">
-                        {participant.score}
+                        {formatScore(participant.score, maxScore)}
                       </td>
                       {(participant.answers || []).map((answer) => (
                         <AnswerCell
