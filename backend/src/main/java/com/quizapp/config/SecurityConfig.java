@@ -52,6 +52,14 @@ public class SecurityConfig {
                                     .permitAll()
                                     .requestMatchers(HttpMethod.POST, "/api/sessions/join")
                                     .permitAll()
+                                    .requestMatchers(HttpMethod.GET, "/api/sessions/code/*")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.GET, "/api/sessions/*/participants")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.GET, "/api/sessions/*/current-question")
+                                    .permitAll()
+                                    .requestMatchers(HttpMethod.GET, "/api/sessions/*/current")
+                                    .permitAll()
                                     .requestMatchers(HttpMethod.POST, "/api/sessions/*/answer")
                                     .permitAll()
                                     .requestMatchers(HttpMethod.GET, "/api/sessions/*/answer-progress")
@@ -86,7 +94,7 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    // Разрешаем все источники (для простоты, можно заменить на конкретный домен Vercel)
+    // Allow all origins for local/dev simplicity; restrict to the Vercel domain in production.
     configuration.setAllowedOriginPatterns(List.of("*"));
 
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
@@ -95,7 +103,7 @@ public class SecurityConfig {
     configuration.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    // Применяем ко ВСЕМ путям, а не только /api/** и /ws/**
+    // Apply CORS to all paths, not only /api/** and /ws/**
     source.registerCorsConfiguration("/**", configuration);
     return source;
   }

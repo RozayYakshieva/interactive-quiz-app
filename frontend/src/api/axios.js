@@ -74,9 +74,10 @@ if (savedToken?.trim()) {
 function attachAuthHeader(config) {
   const url = config.url || "";
   const isAuthRoute = url.includes("/auth/");
+  const isPublicJoin = url.includes("/sessions/join");
   const token = getAuthToken();
 
-  if (!isAuthRoute && token) {
+  if (!isAuthRoute && !isPublicJoin && token) {
     if (typeof config.headers.set === "function") {
       config.headers.set("Authorization", `Bearer ${token}`);
     } else {

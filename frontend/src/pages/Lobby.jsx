@@ -23,19 +23,18 @@ export default function Lobby() {
 
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isOrganizer =
+    Boolean(localStorage.getItem("authToken")) &&
     session?.organizerId != null &&
+    storedUser.id != null &&
     Number(storedUser.id) === Number(session.organizerId);
-  const username = storedUser.username || "Organizer";
+  const username =
+    storedUser.username ||
+    localStorage.getItem("playerNickname") ||
+    (isOrganizer ? "Organizer" : "Player");
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     if (!code) {
-      navigate("/dashboard");
+      navigate("/join");
       return;
     }
 
@@ -87,9 +86,12 @@ export default function Lobby() {
           const body = JSON.parse(message.body);
 
           if (body.type === "EVENT" && body.payload.event === "GAME_STARTED") {
+            const token = localStorage.getItem("authToken");
             const user = JSON.parse(localStorage.getItem("user") || "{}");
             const isHost =
+              Boolean(token) &&
               session.organizerId != null &&
+              user.id != null &&
               Number(user.id) === Number(session.organizerId);
 
             navigate(isHost ? `/host/${session.id}` : `/game/${session.id}`);
@@ -163,10 +165,14 @@ export default function Lobby() {
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
         <p className="text-gray-600">{error}</p>
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() =>
+            navigate(localStorage.getItem("authToken") ? "/dashboard" : "/join")
+          }
           className="text-blue-600 font-medium hover:underline"
         >
-          Back to Dashboard
+          {localStorage.getItem("authToken")
+            ? "Back to Dashboard"
+            : "Back to Join"}
         </button>
       </div>
     );
@@ -277,22 +283,23 @@ export default function Lobby() {
         )}
 
         {isOrganizer && (
-          <button
-            onClick={handleStartGame}
-            className="mb-4 bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition shadow-lg"
-          >
-            Start Game
-          </button>
+          <>
+            <button
+              onClick={handleStartGame}
+              className="mb-4 bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition shadow-lg"
+            >
+              Start Game
+            </button>
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="flex items-center gap-2 px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition shadow-sm disabled:opacity-50"
+            >
+              <X size={18} />
+              {cancelling ? "Cancelling..." : "Cancel"}
+            </button>
+          </>
         )}
-
-        <button
-          onClick={handleCancel}
-          disabled={cancelling}
-          className="flex items-center gap-2 px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition shadow-sm disabled:opacity-50"
-        >
-          <X size={18} />
-          {cancelling ? "Cancelling..." : "Cancel"}
-        </button>
 
         <p className="text-sm text-gray-400 mt-4">
           Share the code with players to join

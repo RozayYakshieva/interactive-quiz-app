@@ -257,7 +257,7 @@ export default function HostQuestion() {
 
           {showResults && multipleChoice && correctAnswersLabel && (
             <p className="mt-6 text-center text-sm font-medium text-gray-700">
-              Правильные ответы: {correctAnswersLabel}
+              Correct answers: {correctAnswersLabel}
             </p>
           )}
 

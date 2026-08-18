@@ -28,6 +28,7 @@ export default function JoinGame() {
         `participant_${participant.sessionId}`,
         String(participant.id)
       );
+      localStorage.setItem("playerNickname", nickname.trim());
 
       navigate(`/lobby/${roomCode.toUpperCase()}`);
     } catch (err) {
