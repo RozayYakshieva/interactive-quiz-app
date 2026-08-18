@@ -24,7 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class SessionService {
   private static final String CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   private static final int CODE_LENGTH = 6;
-  private static final int CORRECT_ANSWER_POINTS = 10;
+  private static final int BASE_POINTS = 1000;
+  private static final double WRONG_OPTION_PENALTY = 0.25;
   private static final SecureRandom RANDOM = new SecureRandom();
 
   private final GameSessionRepository sessionRepository;
@@ -229,18 +230,16 @@ public class SessionService {
             .map(AnswerOption::getId)
             .collect(Collectors.toSet());
 
-    boolean isCorrect;
-    if (question.getType() == QuestionType.MULTIPLE) {
-      isCorrect = selectedIds.equals(correctIds);
-    } else {
-      if (selectedIds.size() != 1) {
-        throw new IllegalArgumentException("Single choice question accepts one answer only");
-      }
-      isCorrect = correctIds.contains(selectedIds.iterator().next());
+    if (question.getType() != QuestionType.MULTIPLE && selectedIds.size() != 1) {
+      throw new IllegalArgumentException("Single choice question accepts one answer only");
     }
 
-    if (isCorrect) {
-      participant.setScore(participant.getScore() + CORRECT_ANSWER_POINTS);
+    double accuracy = accuracyFactor(question.getType(), selectedIds, correctIds);
+    boolean isCorrect = Double.compare(accuracy, 1.0) == 0;
+    int earnedPoints = calculatePoints(question, accuracy);
+
+    if (earnedPoints > 0) {
+      participant.setScore(participant.getScore() + earnedPoints);
       participantRepository.save(participant);
     }
 
@@ -269,6 +268,7 @@ public class SessionService {
 
     return AnswerResponse.builder()
         .isCorrect(isCorrect)
+        .earnedPoints(earnedPoints)
         .currentScore(participant.getScore())
         .build();
   }
@@ -551,5 +551,31 @@ public class SessionService {
     return participant.getUser() != null
         ? participant.getUser().getUsername()
         : participant.getNickname();
+  }
+
+  private int calculatePoints(Question question, double accuracy) {
+    if (accuracy <= 0) {
+      return 0;
+    }
+    return (int) Math.round(BASE_POINTS * difficultyMultiplier(question) * accuracy);
+  }
+
+  private double accuracyFactor(QuestionType type, Set<Long> selected, Set<Long> correct) {
+    if (correct.isEmpty()) {
+      return 0;
+    }
+
+    if (type != QuestionType.MULTIPLE) {
+      return selected.size() == 1 && correct.contains(selected.iterator().next()) ? 1.0 : 0.0;
+    }
+
+    long foundCorrect = selected.stream().filter(correct::contains).count();
+    long extraWrong = selected.stream().filter(id -> !correct.contains(id)).count();
+    double foundRatio = (double) foundCorrect / correct.size();
+    return Math.max(0.0, foundRatio - extraWrong * WRONG_OPTION_PENALTY);
+  }
+
+  private double difficultyMultiplier(Question question) {
+    return 1.0;
   }
 }

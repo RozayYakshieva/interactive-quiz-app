@@ -48,6 +48,29 @@ function formatCorrectAnswers(options = []) {
     .join(", ");
 }
 
+function getEarnedPoints(answerResult) {
+  const value = answerResult?.earnedPoints;
+  if (value == null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function resultBannerClass({ overallCorrect, partiallyCorrect }) {
+  if (overallCorrect) return "bg-green-100 text-green-700";
+  if (partiallyCorrect) return "bg-amber-100 text-amber-800";
+  return "bg-red-100 text-red-700";
+}
+
+function resultBannerText({ overallCorrect, partiallyCorrect, earnedPoints }) {
+  if (partiallyCorrect) {
+    return `Partially correct: +${earnedPoints} pts`;
+  }
+  if (overallCorrect) {
+    return earnedPoints != null ? `Correct! +${earnedPoints} pts` : "Correct!";
+  }
+  return "Incorrect!";
+}
+
 function QuestionImage({ imageUrl }) {
   if (!imageUrl?.trim()) return null;
 
@@ -82,6 +105,10 @@ export default function PlayerQuestion() {
 
   const multipleChoice = isMultipleChoice(question);
   const overallCorrect = Boolean(answerResult?.isCorrect ?? answerResult?.correct);
+  const earnedPoints = getEarnedPoints(answerResult);
+  const partiallyCorrect = Boolean(
+    answered && !overallCorrect && earnedPoints != null && earnedPoints > 0
+  );
   const correctAnswersLabel = formatCorrectAnswers(question?.answerOptions);
   const hasTimeLimit = getQuestionTimeLimit(question) > 0;
 
@@ -352,13 +379,15 @@ export default function PlayerQuestion() {
           {answered && (
             <div className="mt-10 text-center">
               <div
-                className={`inline-block px-8 py-4 rounded-2xl font-bold text-lg ${
-                  overallCorrect
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-                }`}
+                className={`inline-block px-8 py-4 rounded-2xl font-bold text-lg ${resultBannerClass(
+                  { overallCorrect, partiallyCorrect }
+                )}`}
               >
-                {overallCorrect ? "Correct!" : "Incorrect!"}
+                {resultBannerText({
+                  overallCorrect,
+                  partiallyCorrect,
+                  earnedPoints,
+                })}
               </div>
               {!overallCorrect && correctAnswersLabel && (
                 <p className="mt-4 text-sm font-medium text-gray-700">
