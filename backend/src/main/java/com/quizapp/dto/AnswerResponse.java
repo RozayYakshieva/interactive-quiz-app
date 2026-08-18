@@ -7,5 +7,6 @@ import lombok.Data;
 @Builder
 public class AnswerResponse {
   private Boolean isCorrect;
+  private Integer earnedPoints;
   private Integer currentScore;
 }
